@@ -1,5 +1,5 @@
 // ログインまわりの本番の確認（一時的なもの。確認が終わったら消す）。
-// 環境変数 UTSUSHIE_SELFCHECK_TOKEN の合言葉を ?key= で渡したときだけ動き、それ以外は「見つからない」を返す。
+// 環境変数 UTSUSHIE_SELFCHECK_TOKEN の合言葉を ?key= で渡したときだけ動き、違えば「見つからない」を返す（合言葉が未設定なら、その旨だけ返す）。
 // メールは1通も送らない。Supabase の管理APIで検証用の架空のユーザーにログインのリンクを作り、
 // 「リンクを開く → ウツシエに戻る → サーバーがログインを認める → 回数の表を読める」までを本番の設定で通す。
 // 返すのは各段階の成否だけで、トークンや利用者の情報は返さない。
@@ -24,6 +24,8 @@ function allowed(key: string | null): boolean {
 
 export async function GET(request: Request) {
   await connection();
+  // 合言葉がまだ設定されていないことだけは知らせる（ページが本番に出ているかを確かめるため。中身は何も動かさない）
+  if ((process.env.UTSUSHIE_SELFCHECK_TOKEN ?? "").length < 24) return Response.json({ ok: false, ready: false, error: "合言葉が設定されていません" });
   if (!allowed(new URL(request.url).searchParams.get("key"))) return Response.json({ error: "Not Found" }, { status: 404 });
 
   const steps: Step[] = [];
