@@ -15,7 +15,7 @@ const SEGMENTS = 24;
 export default function GeneratingPage() {
   const router = useRouter();
   const { state, loaded, update } = useFlow();
-  const { finalId, planned, pick, brief } = state;
+  const { finalId, planned, pick, brief, photo } = state;
   // 本番モードの Veo は途中で延長を頼むとジョブIDが変わるので、新しいIDを覚えておく
   const { jobs, error, retry } = useJobs(finalId ? [finalId] : [], (ids) => update({ finalId: ids[0] }));
   const job = jobs[0];
@@ -58,9 +58,19 @@ export default function GeneratingPage() {
         {error && <ErrorBox message={error} onRetry={retry} />}
 
         <div className="relative flex aspect-[9/16] w-[200px] flex-col items-center justify-center gap-1 self-center overflow-hidden rounded-[18px] bg-gradient-to-br from-accent/40 to-magenta/40">
-          <span className="font-display text-[44px] font-black" aria-live="polite">{pct}%</span>
-          <span className="text-xs text-ink/90">下書き{pick.toUpperCase()}を高画質に</span>
-          {planned && <span className="text-[11px] text-ink/70">{MODEL_LABEL[planned.model]}（練習モード）</span>}
+          {photo && (
+            // 写真から作るときは、その写真をうっすら敷いておく
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={photo.src}
+              alt=""
+              className="absolute inset-0 size-full object-cover opacity-35"
+              style={{ objectPosition: `${photo.fx * 100}% ${photo.fy * 100}%` }}
+            />
+          )}
+          <span className="relative font-display text-[44px] font-black" aria-live="polite">{pct}%</span>
+          <span className="relative text-xs text-ink/90">下書き{pick.toUpperCase()}を高画質に</span>
+          {planned && <span className="relative text-[11px] text-ink/70">{MODEL_LABEL[planned.model]}（練習モード）</span>}
         </div>
 
         <div className="grid gap-[3px]" style={{ gridTemplateColumns: `repeat(${SEGMENTS}, minmax(0, 1fr))` }} role="progressbar" aria-label="生成の進み具合" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct}>

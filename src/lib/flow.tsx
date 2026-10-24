@@ -3,6 +3,7 @@
 // 5画面をまたいで使う入力と結果。ブラウザの localStorage に保存し、タブやホーム画面アプリを閉じても続きから使える。
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import type { Photo } from "@/lib/photo";
 import type { Brief, FinalModel, Plan, SubtitleCue } from "@/lib/types";
 
 export interface PlanResult {
@@ -19,6 +20,8 @@ export interface FlowState {
   draftIds: string[];
   pick: "a" | "b";
   finalId: string | null;
+  /** 写真から作るときの写真（縮めたもの） */
+  photo: Photo | null;
 }
 
 export const DEFAULT_BRIEF: Brief = {
@@ -28,9 +31,10 @@ export const DEFAULT_BRIEF: Brief = {
   duration_sec: 10,
   sound: true,
   subtitles: true,
+  from_image: false,
 };
 
-const INITIAL: FlowState = { brief: DEFAULT_BRIEF, planned: null, draftIds: [], pick: "a", finalId: null };
+const INITIAL: FlowState = { brief: DEFAULT_BRIEF, planned: null, draftIds: [], pick: "a", finalId: null, photo: null };
 const KEY = "utsushie.flow.v1";
 /** 前は sessionStorage（タブごと）に保存していた。そちらに残っている続きも読む */
 const OLD_SESSION_KEY = KEY;
@@ -58,6 +62,8 @@ interface FlowContextValue {
   loaded: boolean;
   update: (patch: Partial<FlowState>) => void;
   setBrief: (patch: Partial<Brief>) => void;
+  /** 写真を選ぶ・切り取る位置を変える・外す（null） */
+  setPhoto: (photo: Photo | null) => void;
   reset: () => void;
 }
 
@@ -84,7 +90,15 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
     try {
       localStorage.setItem(KEY, JSON.stringify(state));
     } catch {
-      // 保存できなくても画面は動く
+      // 保存できなくても画面は動く。写真で保存領域があふれたときは、写真を除いて残す
+      try {
+        if (state.photo) {
+          const brief = { ...state.brief, from_image: false };
+          localStorage.setItem(KEY, JSON.stringify({ ...state, photo: null, brief, planned: null, draftIds: [] }));
+        }
+      } catch {
+        // それでも保存できなければあきらめる
+      }
     }
   }, [state, loaded]);
 
@@ -95,9 +109,25 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
       setState((s) => ({ ...s, brief: { ...s.brief, ...patch }, planned: null, draftIds: [], finalId: null })),
     [],
   );
+  // 最初のコマが変わるので、前の結果は使えない
+  const setPhoto = useCallback(
+    (photo: Photo | null) =>
+      setState((s) => ({
+        ...s,
+        photo,
+        brief: { ...s.brief, from_image: photo !== null },
+        planned: null,
+        draftIds: [],
+        finalId: null,
+      })),
+    [],
+  );
   const reset = useCallback(() => setState(INITIAL), []);
 
-  const value = useMemo(() => ({ state, loaded, update, setBrief, reset }), [state, loaded, update, setBrief, reset]);
+  const value = useMemo(
+    () => ({ state, loaded, update, setBrief, setPhoto, reset }),
+    [state, loaded, update, setBrief, setPhoto, reset],
+  );
   return <FlowContext.Provider value={value}>{children}</FlowContext.Provider>;
 }
 

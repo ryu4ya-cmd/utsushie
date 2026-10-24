@@ -4,10 +4,14 @@ import type { Brief } from "@/lib/types";
 
 export const MAX_SENTENCE = 80;
 
+/** 写真から作るとき、動かし方を書かなかったら使う一文 */
+export const DEFAULT_IMAGE_SENTENCE = "写真の中の様子が、自然にゆっくり動き出す";
+
 export function parseBrief(input: unknown): { brief: Brief } | { error: string } {
   if (!input || typeof input !== "object") return { error: "入力がありません" };
   const b = input as Record<string, unknown>;
-  const sentence = typeof b.sentence_ja === "string" ? b.sentence_ja.trim() : "";
+  const fromImage = b.from_image === true;
+  const sentence = (typeof b.sentence_ja === "string" ? b.sentence_ja.trim() : "") || (fromImage ? DEFAULT_IMAGE_SENTENCE : "");
   if (!sentence) return { error: "一文を書いてください" };
   if (Array.from(sentence).length > MAX_SENTENCE) return { error: `${MAX_SENTENCE}文字以内にしてください` };
   if (b.purpose !== "sns_vertical" && b.purpose !== "free") return { error: "用途が正しくありません" };
@@ -21,6 +25,7 @@ export function parseBrief(input: unknown): { brief: Brief } | { error: string }
       duration_sec: b.duration_sec,
       sound: b.sound !== false,
       subtitles: b.subtitles !== false,
+      from_image: fromImage,
     },
   };
 }

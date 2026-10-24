@@ -10,6 +10,8 @@ export interface VideoRequest {
   durationSec: number;
   quality: "draft" | "final"; // 下書きは安い設定、本番は高画質
   sound: boolean;
+  /** 写真から作るときの最初のコマ（data: を除いた base64）。いまは Kling だけが使う */
+  image?: string;
 }
 
 /** 動画APIに問い合わせた結果。done なら videoRef（Kling は動画のURL、Veo はファイルのURI）が入る */

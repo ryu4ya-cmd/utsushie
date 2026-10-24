@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mockPlan } from "@/lib/plan/mockPlanner";
 import type { Brief, Duration } from "@/lib/types";
 import { klingToken } from "./kling";
-import { ConfigError, decodeLiveJob, encodeLiveJob, liveStatus, liveVideo, liveVideoUrl, parsePlan, startLive, type Env, type LiveDeps } from "./live";
+import { ConfigError, checkLiveConfig, decodeLiveJob, encodeLiveJob, liveStatus, liveVideo, liveVideoUrl, parsePlan, startLive, type Env, type LiveDeps } from "./live";
 import { ProviderError, type FetchLike } from "./types";
 
 const SECRET = "x".repeat(32);
@@ -19,7 +19,7 @@ const ENV: Env = {
 const T0 = 1_700_000_000_000;
 
 const plan = (sentence_ja: string, duration_sec: Duration = 10) =>
-  mockPlan({ sentence_ja, purpose: "sns_vertical", mood: "auto", duration_sec, sound: true, subtitles: true } satisfies Brief);
+  mockPlan({ sentence_ja, purpose: "sns_vertical", mood: "auto", duration_sec, sound: true, subtitles: true, from_image: false } satisfies Brief);
 const WITH_LINE = plan("女の子が振り返って「また明日ね」と笑う");
 const NO_LINE_15 = plan("夕焼けの海辺で猫が驚いてジャンプする", 15);
 
@@ -145,6 +145,49 @@ describe("Kling 3.0（セリフあり）", () => {
 
     const denied = fakeFetch(() => json({ code: 1102, message: "Account balance not enough" }, 429));
     await expect(startLive({ kind: "final", duration: 10, plan: WITH_LINE, sound: true }, deps(denied.fn))).rejects.toBeInstanceOf(ProviderError);
+  });
+});
+
+describe("Kling 3.0（写真から）", () => {
+  const image = { mime: "image/jpeg" as const, base64: "/9j/AAAA", width: 720, height: 1280 };
+  const photoPlan = mockPlan({ sentence_ja: "髪が風になびく", purpose: "sns_vertical", mood: "auto", duration_sec: 10, sound: true, subtitles: true, from_image: true });
+
+  it("セリフがなくても Kling の image2video に写真を渡し、縦横比は送らない", async () => {
+    let status = "processing";
+    const { fn, calls } = fakeFetch((c) =>
+      c.method === "POST"
+        ? json({ code: 0, data: { task_id: "img-1" } })
+        : json({ code: 0, data: { task_status: status, task_result: { videos: [{ url: "https://cdn.example/i.mp4" }] } } }),
+    );
+    const [id] = await startLive({ kind: "final", duration: 10, plan: photoPlan, sound: true, image }, deps(fn));
+    expect(calls[0].url).toBe("https://api-singapore.klingai.com/v1/videos/image2video");
+    expect(calls[0].body).toMatchObject({ model_name: "kling-v3", image: "/9j/AAAA", mode: "pro", duration: "10", sound: "on" });
+    expect(calls[0].body).not.toHaveProperty("aspect_ratio");
+    expect(calls[0].body?.prompt).toContain("Animate the input image");
+
+    const job = decodeLiveJob(id, ENV);
+    expect(job).toMatchObject({ model: "kling-3.0", source: "image", steps: 1 });
+    expect(JSON.stringify(job)).not.toContain("/9j/"); // 写真はIDに入れない
+
+    await liveStatus(id, deps(fn, T0 + 1000));
+    expect(calls[1].url).toBe("https://api-singapore.klingai.com/v1/videos/image2video/img-1");
+    status = "succeed";
+    expect(await liveStatus(id, deps(fn, T0 + 2000))).toMatchObject({ state: "done", model: "kling-3.0" });
+  });
+
+  it("下書きも2本とも同じ写真から、std・5秒・音なしで頼む", async () => {
+    const { fn, calls } = fakeFetch(() => json({ code: 0, data: { task_id: "img-d" } }));
+    await startLive({ kind: "draft", duration: 15, plan: photoPlan, sound: true, image }, deps(fn));
+    expect(calls).toHaveLength(2);
+    for (const c of calls) {
+      expect(c.url).toMatch(/\/image2video$/);
+      expect(c.body).toMatchObject({ image: "/9j/AAAA", mode: "std", duration: "5", sound: "off" });
+    }
+  });
+
+  it("写真から作るときは Gemini の鍵がなくても動き、Kling の鍵がなければ止める", () => {
+    expect(() => checkLiveConfig(photoPlan, { ...ENV, GEMINI_API_KEY: "" }, true)).not.toThrow();
+    expect(() => checkLiveConfig(photoPlan, { ...ENV, KLING_ACCESS_KEY: "" }, true)).toThrow(ConfigError);
   });
 });
 
@@ -337,6 +380,18 @@ describe("練習モードのAPIは外部を一切呼ばない", () => {
     expect(practice).toBe(true);
     const st = await GET(new Request("http://x"), { params: Promise.resolve({ id: ids[0] }) } as never);
     expect(await st.json()).toMatchObject({ practice: true });
+  });
+
+  it("写真から作るときも外部を呼ばず、写真の形だけ確かめる", async () => {
+    const { POST } = await import("@/app/api/jobs/route");
+    const { fakeJpeg } = await import("@/lib/startImage.fixtures");
+    const send = (image: unknown) =>
+      POST(new Request("http://x/api/jobs", { method: "POST", body: JSON.stringify({ kind: "final", duration_sec: 10, model: "veo-3.1", image }) }));
+    const ok = await send(fakeJpeg(720, 1280));
+    expect(ok.status).toBe(200);
+    const { ids } = await ok.json();
+    expect(JSON.parse(Buffer.from(ids[0], "base64url").toString())).toMatchObject({ model: "kling-3.0" });
+    expect((await send("data:image/gif;base64,R0lGODlh")).status).toBe(400);
   });
 
   it("live 以外の値は練習モード", async () => {
