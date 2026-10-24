@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { BackHeader, Chip, CtaButton, Screen, StepBar, Switch, WaitForFlow } from "@/components/ui";
 import { MAX_SENTENCE } from "@/lib/brief";
 import { useFlow } from "@/lib/flow";
+import { useSession, useUsage } from "@/lib/supabase/browser";
 import type { Mood } from "@/lib/types";
 
 const EXAMPLES = [
@@ -27,6 +28,11 @@ export default function CreatePage() {
   const b = state.brief;
   const count = Array.from(b.sentence_ja).length;
   const canGo = b.sentence_ja.trim().length > 0 && count <= MAX_SENTENCE;
+  // ログインの設定があるときは、ログインしてから作る
+  const auth = useSession();
+  const usage = useUsage(auth.session);
+  const needLogin = auth.enabled && auth.loaded && !auth.session;
+  const left = usage ? Math.max(0, usage.limits.draft - usage.used.draft) : null;
 
   return (
     <WaitForFlow loaded={loaded}>
@@ -113,9 +119,14 @@ export default function CreatePage() {
 
         <div className="flex-1" />
         <div className="flex flex-col gap-2">
-          <span className="text-center text-xs text-muted">練習モードでは、サンプル動画が返ってきます</span>
-          <CtaButton disabled={!canGo} onClick={() => router.push("/drafts")}>
-            下書きを2本作る
+          <span className="text-center text-xs text-muted">
+            {left !== null ? `今日はあと${left}回、下書きを作れます（1回で2本）` : "練習モードでは、サンプル動画が返ってきます"}
+          </span>
+          <CtaButton
+            disabled={!canGo || !auth.loaded || left === 0}
+            onClick={() => router.push(needLogin ? "/login?next=/drafts" : "/drafts")}
+          >
+            {needLogin ? "ログインして下書きを作る" : "下書きを2本作る"}
           </CtaButton>
         </div>
       </Screen>

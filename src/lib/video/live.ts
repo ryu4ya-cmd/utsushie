@@ -1,9 +1,12 @@
 // 本番モードの生成ジョブ。セリフあり → Kling 3.0、なし → Veo 3.1 に頼む。
 // 練習モードと同じくサーバーに状態を持たず、動画APIのタスクIDなどをジョブIDに入れておく。
 // ジョブIDには署名を付け、作り替えたIDで勝手に生成（課金）を始められないようにする。
+// 完成した動画は、Supabase の保存場所があればそこへ移す（動画API側の動画はいずれ消えるため）。
 
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { chooseFinalModel } from "@/lib/models";
+import type { SupabaseServer } from "@/lib/supabase/config";
+import { hasStoredVideo, putStoredVideo, storedVideoUrl } from "@/lib/supabase/server";
 import { kling, veo } from "@/lib/plan/build";
 import type { Duration, FinalModel, JobKind, JobStatus, Plan } from "@/lib/types";
 import { downloadKling, pollKling, submitKling, type KlingConfig } from "@/lib/video/kling";
@@ -16,6 +19,8 @@ export interface LiveDeps {
   env: Env;
   fetch: FetchLike;
   now: number; // ミリ秒
+  /** 完成動画の保存場所。なければ動画API側に置いたまま、サーバー経由で返す */
+  storage?: SupabaseServer | null;
 }
 
 /** 設定が足りないときのエラー。動画APIは呼ばずに止める */
@@ -36,6 +41,7 @@ export interface LiveJob {
   steps: number;
   next: string | null; // Veo の延長に使う、続きの指示文
   startedAt: number; // この step を始めた時刻（ミリ秒）
+  owner?: string | null; // 頼んだ人（Supabase のユーザーID）。保存場所でのフォルダ名になる
 }
 
 /** 本番モードで進み具合を問い合わせる間隔。動画APIに負担をかけないよう練習モードより長い */
@@ -130,6 +136,14 @@ export interface StartInput {
   duration: Duration;
   plan: Plan;
   sound: boolean;
+  owner?: string | null;
+}
+
+/** 動画APIを呼ぶ前に、設定がそろっているか確かめる（回数を使ってから設定不足で止まらないように） */
+export function checkLiveConfig(plan: Plan, env: Env): void {
+  secret(env);
+  if (chooseFinalModel(plan) === "kling-3.0") klingConfig(env);
+  else veoConfig(env);
 }
 
 /** 下書きなら2本、本番なら1本を頼み、ジョブIDを返す */
@@ -154,6 +168,7 @@ export async function startLive(input: StartInput, deps: LiveDeps): Promise<stri
         steps: parts.length,
         next: parts[1] ?? null,
         startedAt: deps.now,
+        owner: input.owner ?? null,
       };
       const task = await submit(job, prompt, deps);
       return encodeLiveJob({ ...job, task }, deps.env);
@@ -193,12 +208,16 @@ export async function liveStatus(id: string, deps: LiveDeps): Promise<JobStatus 
     const nextJob = { ...job, step: job.step + 1, next: null, startedAt: deps.now };
     const task = await submit(nextJob, job.next, deps, st.videoRef);
     const nextId = encodeLiveJob({ ...nextJob, task }, deps.env);
-    return status(nextId, { ...nextJob, task }, false, deps.now);
+    return status(nextId, { ...nextJob, task }, null, deps.now);
   }
-  return status(id, job, st.state === "done", deps.now);
+  if (st.state !== "done") return status(id, job, null, deps.now);
+  const videoUrl = job.kind === "final" ? await keepVideo(id, job, st.videoRef, deps) : proxyUrl(id);
+  return status(id, job, videoUrl, deps.now);
 }
 
-function status(id: string, job: LiveJob, done: boolean, now: number): JobStatus {
+/** videoUrl があればできあがり */
+function status(id: string, job: LiveJob, videoUrl: string | null, now: number): JobStatus {
+  const done = videoUrl !== null;
   const expected = EXPECTED_SEC[job.model][job.kind];
   const elapsed = Math.max(0, (now - job.startedAt) / 1000);
   const within = Math.min(0.95, elapsed / expected);
@@ -209,7 +228,7 @@ function status(id: string, job: LiveJob, done: boolean, now: number): JobStatus
     state: done ? "done" : "running",
     progress: done ? 100 : Math.floor(((job.step - 1 + within) / job.steps) * 100),
     remainingSec: done ? 0 : Math.max(10, Math.ceil(expected - elapsed)) + left * expected,
-    videoUrl: done ? `/api/jobs/${id}/video` : null,
+    videoUrl,
     model: job.model,
     practice: false,
     pollMs: LIVE_POLL_MS,
@@ -232,14 +251,57 @@ export function liveError(e: unknown): Response {
 
 // ---- できた動画 ----
 
+const proxyUrl = (id: string) => `/api/jobs/${id}/video`;
+
+/** 無料プランの1ファイルの上限 */
+const MAX_STORED_BYTES = 50 * 1024 * 1024;
+
+/** 保存場所での名前。頼んだ人のフォルダに、推測できない名前で置く */
+export function storedVideoPath(job: LiveJob, env: Env): string | null {
+  if (!job.owner || !/^[\w-]{1,64}$/.test(job.owner)) return null;
+  return `${job.owner}/${sign(`video:${job.task}`, secret(env)).slice(0, 32)}.mp4`;
+}
+
 /**
- * 共有ページ用の、完成した本番動画のアドレス。下書きや延長前の途中のIDなら null。
- * 動画そのものは動画API側に置いたままなので、いずれ消える（Veo は約2日、Kling は約30日）。
+ * 完成した動画を保存場所へ移し、そのアドレスを返す。
+ * 保存場所がない・移せなかったときは、動画API側の動画をサーバー経由で返すアドレスにする（いずれ消える）。
  */
-export function liveVideoUrl(id: string, env: Env): string | null {
+async function keepVideo(id: string, job: LiveJob, videoRef: string, deps: LiveDeps): Promise<string> {
+  const path = deps.storage ? storedVideoPath(job, deps.env) : null;
+  if (!deps.storage || !path) return proxyUrl(id);
   try {
-    const job = decodeLiveJob(id, env);
-    return job && job.kind === "final" && !job.next ? `/api/jobs/${id}/video` : null;
+    if (await hasStoredVideo(deps.storage, path, deps.fetch)) return storedVideoUrl(deps.storage, path);
+    const res = await download(job, videoRef, null, deps);
+    if (!res.ok) throw new Error(`動画を読み込めませんでした（HTTP ${res.status}）`);
+    const data = await res.arrayBuffer();
+    if (data.byteLength > MAX_STORED_BYTES) throw new Error(`動画が大きすぎて保存できません（${data.byteLength} バイト）`);
+    await putStoredVideo(deps.storage, path, data, deps.fetch);
+    return storedVideoUrl(deps.storage, path);
+  } catch (e) {
+    console.error("動画を保存場所に移せませんでした", e);
+    return proxyUrl(id);
+  }
+}
+
+/** 保存場所に移してあれば、そのアドレス */
+async function storedUrlOf(job: LiveJob, deps: LiveDeps): Promise<string | null> {
+  const path = deps.storage ? storedVideoPath(job, deps.env) : null;
+  if (!deps.storage || !path) return null;
+  return (await hasStoredVideo(deps.storage, path, deps.fetch)) ? storedVideoUrl(deps.storage, path) : null;
+}
+
+function download(job: LiveJob, videoRef: string, range: string | null, deps: LiveDeps): Promise<Response> {
+  return job.model === "kling-3.0"
+    ? downloadKling(videoRef, range, deps.fetch)
+    : downloadVeo(veoConfig(deps.env), videoRef, range, deps.fetch);
+}
+
+/** 共有ページ用の、完成した本番動画のアドレス。下書きや延長前の途中のIDなら null */
+export async function liveVideoUrl(id: string, deps: LiveDeps): Promise<string | null> {
+  try {
+    const job = decodeLiveJob(id, deps.env);
+    if (!job || job.kind !== "final" || job.next) return null;
+    return (await storedUrlOf(job, deps)) ?? proxyUrl(id);
   } catch {
     return null; // 署名の鍵がないなど
   }
@@ -249,13 +311,14 @@ export function liveVideoUrl(id: string, env: Env): string | null {
 export async function liveVideo(id: string, range: string | null, deps: LiveDeps): Promise<Response> {
   const job = decodeLiveJob(id, deps.env);
   if (!job) return Response.json({ error: "ジョブが見つかりません" }, { status: 404 });
+  // 保存場所に移してあれば、そちらを見てもらう（動画API側の動画が消えたあとでも見られる）
+  const stored = job.kind === "final" && !job.next ? await storedUrlOf(job, deps) : null;
+  if (stored) return Response.redirect(stored, 302);
+
   const st = await poll(job, deps);
   if (st.state !== "done" || job.next) return Response.json({ error: "動画はまだできていません" }, { status: 409 });
 
-  const upstream =
-    job.model === "kling-3.0"
-      ? await downloadKling(st.videoRef, range, deps.fetch)
-      : await downloadVeo(veoConfig(deps.env), st.videoRef, range, deps.fetch);
+  const upstream = await download(job, st.videoRef, range, deps);
   if (!upstream.ok) return Response.json({ error: "動画を読み込めませんでした" }, { status: 502 });
 
   const headers = new Headers({ "Content-Type": "video/mp4", "Cache-Control": "private, max-age=3600" });

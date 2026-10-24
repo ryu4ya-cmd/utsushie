@@ -1,7 +1,9 @@
 // ジョブの進み具合。練習モードでは経過時間から計算し、本番モードでは動画APIに問い合わせる。
+// 本番モードで完成したら、Supabase の保存場所へ動画を移す。
 
 import { decodeJob, practiceStatus } from "@/lib/jobs";
 import { appMode } from "@/lib/mode";
+import { supabaseServer } from "@/lib/supabase/config";
 import { liveError, liveStatus } from "@/lib/video/live";
 
 const NOT_FOUND = { error: "ジョブが見つかりません" };
@@ -12,7 +14,7 @@ export async function GET(_request: Request, ctx: RouteContext<"/api/jobs/[id]">
 
   if (appMode() === "live") {
     try {
-      const status = await liveStatus(id, { env: process.env, fetch, now: Date.now() });
+      const status = await liveStatus(id, { env: process.env, fetch, now: Date.now(), storage: supabaseServer(process.env) });
       if (!status) return Response.json(NOT_FOUND, { status: 404 });
       return Response.json(status, { headers });
     } catch (e) {

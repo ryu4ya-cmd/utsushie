@@ -32,6 +32,31 @@ export const DEFAULT_BRIEF: Brief = {
 
 const INITIAL: FlowState = { brief: DEFAULT_BRIEF, planned: null, draftIds: [], pick: "a", finalId: null };
 const KEY = "utsushie.flow.v1";
+/**
+ * ログインのメールのリンクは新しいタブで開くことがあり、sessionStorage はタブごとに別なので、
+ * ログイン画面がメールを送る前に、続きをこちら（localStorage）にも写しておく。読んだら消す。
+ */
+const RESUME_KEY = "utsushie.flow.resume.v1";
+
+/** ログインのあと、新しいタブでも入力の続きから使えるようにする */
+export function keepFlowForLogin() {
+  try {
+    const saved = sessionStorage.getItem(KEY);
+    if (saved) localStorage.setItem(RESUME_KEY, saved);
+  } catch {
+    // 写せなければ、ログインのあとに入力し直す
+  }
+}
+
+function takeResume(): string | null {
+  try {
+    const saved = localStorage.getItem(RESUME_KEY);
+    localStorage.removeItem(RESUME_KEY);
+    return saved;
+  } catch {
+    return null;
+  }
+}
 
 interface FlowContextValue {
   state: FlowState;
@@ -49,7 +74,7 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     try {
-      const saved = sessionStorage.getItem(KEY);
+      const saved = sessionStorage.getItem(KEY) ?? takeResume();
       // 保存済みの続きを読み込むのは最初の1回だけ
       // eslint-disable-next-line react-hooks/set-state-in-effect
       if (saved) setState({ ...INITIAL, ...(JSON.parse(saved) as FlowState) });

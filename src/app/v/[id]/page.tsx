@@ -1,5 +1,5 @@
 // 共有ページ。SNS で送ったリンクを開いた人が、ログインなしで動画を見られる。
-// 練習モードではジョブIDからサンプル動画を割り出す。本番モードでは署名付きのジョブIDから完成動画のアドレスを引く。
+// 練習モードではジョブIDからサンプル動画を割り出す。本番モードでは署名付きのジョブIDから完成動画のアドレス（保存場所に移してあればそちら）を引く。
 
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -8,17 +8,28 @@ import { BrandHeader, CtaLink, Screen } from "@/components/ui";
 import { decodeJob, sampleVideo } from "@/lib/jobs";
 import { appMode } from "@/lib/mode";
 import { SITE_URL } from "@/lib/site";
+import { supabaseServer, type SupabaseServer } from "@/lib/supabase/config";
 import { liveVideoUrl } from "@/lib/video/live";
 
 type Props = PageProps<"/v/[id]">;
 
 async function load({ params, searchParams }: Props) {
   const { id } = await params;
-  const videoUrl = appMode() === "live" ? liveVideoUrl(id, process.env) : practiceVideoUrl(id);
+  const videoUrl = appMode() === "live" ? await liveVideoUrl(id, liveDeps()) : practiceVideoUrl(id);
   if (!videoUrl) return null;
   const t = (await searchParams).t;
   const title = (typeof t === "string" && t.trim().slice(0, 60)) || "ウツシエで作った動画";
   return { title, videoUrl };
+}
+
+function liveDeps() {
+  let storage: SupabaseServer | null = null;
+  try {
+    storage = supabaseServer(process.env);
+  } catch {
+    // 保存場所の設定が足りなければ、動画API側の動画を見せる
+  }
+  return { env: process.env, fetch, now: Date.now(), storage };
 }
 
 function practiceVideoUrl(id: string) {
