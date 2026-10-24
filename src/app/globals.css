@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+/* ウツシエの色。ロゴ（濃紺の地にシアン→マゼンタ）に合わせている */
+@theme {
+  --color-bg: #08060f;
+  --color-surface: #15121f;
+  --color-surface-2: #1d1a2a;
+  --color-line: #2c2840;
+  --color-line-strong: #4a4562;
+  --color-ink: #f2f3f5;
+  --color-muted: #a9a6b8;
+  --color-accent: #3ee8ff;
+  --color-accent-hover: #7ff0ff;
+  --color-on-accent: #08060f;
+  --color-magenta: #ff4fd8;
+  --font-sans: var(--font-noto), system-ui, sans-serif;
+  --font-display: var(--font-zen), var(--font-noto), sans-serif;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+video::cue {
+  font-weight: 700;
+  background: rgb(8 6 15 / 0.6);
+}
