@@ -7,7 +7,10 @@ import Link from "next/link";
 
 export function Screen({ children }: { children: React.ReactNode }) {
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col gap-5 px-5 pt-5 pb-7">{children}</main>
+    // iPhone の画面上端（時計）と下端（ホームバー・Safari のツールバー）に重ならないよう、安全な余白を足す
+    <main className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col gap-5 px-5 pt-[calc(env(safe-area-inset-top)+20px)] pb-[calc(env(safe-area-inset-bottom)+28px)]">
+      {children}
+    </main>
   );
 }
 
