@@ -1,15 +1,17 @@
 // 本番モードの生成ジョブ。写真から作るときとセリフあり → Kling 3.0、それ以外 → Veo 3.1 に頼む。
+// UTSUSHIE_VIDEO=free のときは、すべて無料の CogVideoX-Flash に頼む（お金はかからない）。
 // 練習モードと同じくサーバーに状態を持たず、動画APIのタスクIDなどをジョブIDに入れておく。
 // ジョブIDには署名を付け、作り替えたIDで勝手に生成（課金）を始められないようにする。
 // 完成した動画は、Supabase の保存場所があればそこへ移す（動画API側の動画はいずれ消えるため）。
 
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { chooseFinalModel } from "@/lib/models";
+import { chooseFinalModel, cogvideo } from "@/lib/models";
 import type { SupabaseServer } from "@/lib/supabase/config";
 import { hasStoredVideo, putStoredVideo, storedVideoUrl } from "@/lib/supabase/server";
 import { kling, veo } from "@/lib/plan/build";
 import type { StartImage } from "@/lib/startImage";
 import type { Duration, FinalModel, JobKind, JobStatus, Plan } from "@/lib/types";
+import { downloadCogVideo, pollCogVideo, submitCogVideo, type CogVideoConfig } from "@/lib/video/cogvideo";
 import { downloadKling, pollKling, submitKling, type KlingConfig } from "@/lib/video/kling";
 import { ProviderError, type FetchLike, type VideoRequest } from "@/lib/video/types";
 import { downloadVeo, pollVeo, submitVeo, type VeoConfig } from "@/lib/video/veo";
@@ -53,6 +55,7 @@ export const LIVE_POLL_MS = 5000;
 const EXPECTED_SEC: Record<FinalModel, Record<JobKind, number>> = {
   "kling-3.0": { draft: 120, final: 300 },
   "veo-3.1": { draft: 60, final: 120 },
+  "cogvideox-flash": { draft: 60, final: 120 },
 };
 
 const VARIANT_HINT = {
@@ -87,6 +90,15 @@ export function veoConfig(env: Env): VeoConfig {
     apiBase: env.GEMINI_API_BASE || "https://generativelanguage.googleapis.com/v1beta",
     model: env.VEO_MODEL || "veo-3.1-generate-preview",
     draftModel: env.VEO_DRAFT_MODEL || "veo-3.1-fast-generate-preview",
+  };
+}
+
+export function cogvideoConfig(env: Env): CogVideoConfig {
+  if (!env.ZHIPU_API_KEY) throw new ConfigError("CogVideoX-Flash を使うには ZHIPU_API_KEY（智谱 BigModel の APIキー）を設定してください。");
+  return {
+    apiKey: env.ZHIPU_API_KEY,
+    apiBase: env.ZHIPU_API_BASE || "https://open.bigmodel.cn/api/paas/v4",
+    model: env.COGVIDEO_MODEL || "cogvideox-flash",
   };
 }
 
@@ -146,7 +158,9 @@ export interface StartInput {
 /** 動画APIを呼ぶ前に、設定がそろっているか確かめる（回数を使ってから設定不足で止まらないように） */
 export function checkLiveConfig(plan: Plan, env: Env, fromImage = false): void {
   secret(env);
-  if (chooseFinalModel(plan, fromImage) === "kling-3.0") klingConfig(env);
+  const model = chooseFinalModel(plan, fromImage, env);
+  if (model === "kling-3.0") klingConfig(env);
+  else if (model === "cogvideox-flash") cogvideoConfig(env);
   else veoConfig(env);
 }
 
@@ -154,11 +168,12 @@ export function checkLiveConfig(plan: Plan, env: Env, fromImage = false): void {
 export async function startLive(input: StartInput, deps: LiveDeps): Promise<string[]> {
   secret(deps.env); // 頼んだあとでIDを作れない、ということがないよう先に確かめる
   const image = input.image ?? null;
-  const model = chooseFinalModel(input.plan, image !== null);
+  const model = chooseFinalModel(input.plan, image !== null, deps.env);
   const variants = input.kind === "draft" ? (["a", "b"] as const) : [null];
   return Promise.all(
     variants.map(async (variant) => {
-      const segments = model === "kling-3.0" ? [kling(input.plan)] : veo(input.plan).map((s) => s.text);
+      const segments =
+        model === "kling-3.0" ? [kling(input.plan)] : model === "cogvideox-flash" ? [cogvideo(input.plan)] : veo(input.plan).map((s) => s.text);
       // 下書きは安く済ませるため、Veo でも延長しない
       const parts = input.kind === "draft" ? segments.slice(0, 1) : segments;
       const prompt = variant ? `${parts[0]}\n${VARIANT_HINT[variant]}` : parts[0];
@@ -187,15 +202,15 @@ function request(job: Omit<LiveJob, "task">, prompt: string, image?: string): Vi
 }
 
 function submit(job: Omit<LiveJob, "task">, prompt: string, deps: LiveDeps, extendFrom?: string, image?: string) {
-  return job.model === "kling-3.0"
-    ? submitKling(klingConfig(deps.env), request(job, prompt, image), deps.fetch)
-    : submitVeo(veoConfig(deps.env), request(job, prompt), deps.fetch, extendFrom);
+  if (job.model === "kling-3.0") return submitKling(klingConfig(deps.env), request(job, prompt, image), deps.fetch);
+  if (job.model === "cogvideox-flash") return submitCogVideo(cogvideoConfig(deps.env), request(job, prompt, image), deps.fetch);
+  return submitVeo(veoConfig(deps.env), request(job, prompt), deps.fetch, extendFrom);
 }
 
 function poll(job: LiveJob, deps: LiveDeps) {
-  return job.model === "kling-3.0"
-    ? pollKling(klingConfig(deps.env), job.task, deps.fetch, job.source === "image" ? "image" : "text")
-    : pollVeo(veoConfig(deps.env), job.task, deps.fetch);
+  if (job.model === "kling-3.0") return pollKling(klingConfig(deps.env), job.task, deps.fetch, job.source === "image" ? "image" : "text");
+  if (job.model === "cogvideox-flash") return pollCogVideo(cogvideoConfig(deps.env), job.task, deps.fetch);
+  return pollVeo(veoConfig(deps.env), job.task, deps.fetch);
 }
 
 // ---- 進み具合 ----
@@ -297,9 +312,9 @@ async function storedUrlOf(job: LiveJob, deps: LiveDeps): Promise<string | null>
 }
 
 function download(job: LiveJob, videoRef: string, range: string | null, deps: LiveDeps): Promise<Response> {
-  return job.model === "kling-3.0"
-    ? downloadKling(videoRef, range, deps.fetch)
-    : downloadVeo(veoConfig(deps.env), videoRef, range, deps.fetch);
+  if (job.model === "kling-3.0") return downloadKling(videoRef, range, deps.fetch);
+  if (job.model === "cogvideox-flash") return downloadCogVideo(videoRef, range, deps.fetch);
+  return downloadVeo(veoConfig(deps.env), videoRef, range, deps.fetch);
 }
 
 /** 共有ページ用の、完成した本番動画のアドレス。下書きや延長前の途中のIDなら null */

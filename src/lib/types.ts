@@ -64,8 +64,8 @@ export interface SubtitleCue {
   text: string;
 }
 
-/** 本番で使う動画モデル。写真から作るときとセリフありは Kling 3.0、それ以外は Veo 3.1 */
-export type FinalModel = "kling-3.0" | "veo-3.1";
+/** 本番で使う動画モデル。写真から作るときとセリフありは Kling 3.0、それ以外は Veo 3.1。無料の設定のときはすべて CogVideoX-Flash */
+export type FinalModel = "kling-3.0" | "veo-3.1" | "cogvideox-flash";
 
 export type JobKind = "draft" | "final";
 
