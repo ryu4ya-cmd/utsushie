@@ -138,11 +138,17 @@ export function Spinner() {
   );
 }
 
-export function ErrorBox({ message }: { message: string }) {
+/** onRetry を渡すと「もう一度」のボタンを出す（理由だけ出して行き止まりにしない） */
+export function ErrorBox({ message, onRetry }: { message: string; onRetry?: () => void }) {
   return (
-    <p role="alert" className="rounded-xl border border-magenta/60 bg-surface px-4 py-3 text-sm leading-relaxed">
-      {message}
-    </p>
+    <div role="alert" className="flex flex-col gap-3 rounded-xl border border-magenta/60 bg-surface px-4 py-3">
+      <p className="text-sm leading-relaxed">{message}</p>
+      {onRetry && (
+        <button type="button" onClick={onRetry} className="h-11 rounded-xl bg-accent text-sm font-bold text-on-accent hover:bg-accent-hover">
+          もう一度
+        </button>
+      )}
+    </div>
   );
 }
 

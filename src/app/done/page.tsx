@@ -86,12 +86,14 @@ export default function DonePage() {
           <span className="absolute top-2.5 right-2.5 rounded-md bg-bg px-2 py-0.5 text-[11px]">練習モード</span>
         </div>
 
-        <div className="flex items-center justify-center gap-2">
-          <span className="text-[13px] text-muted">字幕</span>
-          <Chip on={subOn} onClick={() => setSubOn(true)} className="h-10 rounded-full px-[18px]">あり</Chip>
-          <Chip on={!subOn} onClick={() => setSubOn(false)} className="h-10 rounded-full px-[18px]">なし</Chip>
-        </div>
-        {!cues.length && <p className="-mt-3 text-center text-xs text-muted">セリフがないので、字幕は出ません</p>}
+        {/* セリフがなければ字幕もないので、切り替えは出さない */}
+        {cues.length > 0 && (
+          <div className="flex items-center justify-center gap-2">
+            <span className="text-[13px] text-muted">字幕</span>
+            <Chip on={subOn} onClick={() => setSubOn(true)} className="h-10 rounded-full px-[18px]">あり</Chip>
+            <Chip on={!subOn} onClick={() => setSubOn(false)} className="h-10 rounded-full px-[18px]">なし</Chip>
+          </div>
+        )}
 
         <a
           href={videoUrl ?? undefined}
@@ -108,23 +110,22 @@ export default function DonePage() {
         {finalId && <SharePanel id={finalId} title={title} videoUrl={videoUrl} flash={flash} />}
 
         <div className="flex-1" />
+        {brief.duration_sec === 10 && (
+          <button
+            type="button"
+            onClick={() => {
+              setBrief({ duration_sec: 15 });
+              router.push("/drafts");
+            }}
+            className="h-11 rounded-xl border border-line bg-surface text-sm hover:border-accent"
+          >
+            同じ一文で15秒版も作る
+          </button>
+        )}
         <div className="flex items-center justify-between text-sm">
-          {brief.duration_sec === 10 ? (
-            <button
-              type="button"
-              onClick={() => {
-                setBrief({ duration_sec: 15 });
-                router.push("/drafts");
-              }}
-              className="flex min-h-11 items-center text-accent hover:text-accent-hover"
-            >
-              15秒版も作る
-            </button>
-          ) : (
-            <Link href="/history" className="flex min-h-11 items-center text-accent hover:text-accent-hover">
-              履歴を見る
-            </Link>
-          )}
+          <Link href="/history" className="flex min-h-11 items-center text-accent hover:text-accent-hover">
+            履歴を見る
+          </Link>
           <button
             type="button"
             onClick={() => {

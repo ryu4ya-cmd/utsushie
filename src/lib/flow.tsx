@@ -1,6 +1,6 @@
 "use client";
 
-// 5画面をまたいで使う入力と結果。ブラウザの sessionStorage に保存し、再読み込みしても続きから使える。
+// 5画面をまたいで使う入力と結果。ブラウザの localStorage に保存し、タブやホーム画面アプリを閉じても続きから使える。
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { Brief, FinalModel, Plan, SubtitleCue } from "@/lib/types";
@@ -32,30 +32,25 @@ export const DEFAULT_BRIEF: Brief = {
 
 const INITIAL: FlowState = { brief: DEFAULT_BRIEF, planned: null, draftIds: [], pick: "a", finalId: null };
 const KEY = "utsushie.flow.v1";
-/**
- * ログインのメールのリンクは新しいタブで開くことがあり、sessionStorage はタブごとに別なので、
- * ログイン画面がメールを送る前に、続きをこちら（localStorage）にも写しておく。読んだら消す。
- */
-const RESUME_KEY = "utsushie.flow.resume.v1";
+/** 前は sessionStorage（タブごと）に保存していた。そちらに残っている続きも読む */
+const OLD_SESSION_KEY = KEY;
+/** 前は、ログインのメールを開いた新しいタブのためにここへ写していた */
+const OLD_RESUME_KEY = "utsushie.flow.resume.v1";
 
-/** ログインのあと、新しいタブでも入力の続きから使えるようにする */
-export function keepFlowForLogin() {
+function loadSaved(): string | null {
+  let saved: string | null = null;
   try {
-    const saved = sessionStorage.getItem(KEY);
-    if (saved) localStorage.setItem(RESUME_KEY, saved);
+    saved = localStorage.getItem(KEY);
   } catch {
-    // 写せなければ、ログインのあとに入力し直す
+    // 読めなければ下へ
   }
-}
-
-function takeResume(): string | null {
   try {
-    const saved = localStorage.getItem(RESUME_KEY);
-    localStorage.removeItem(RESUME_KEY);
-    return saved;
+    saved ??= sessionStorage.getItem(OLD_SESSION_KEY) ?? localStorage.getItem(OLD_RESUME_KEY);
+    localStorage.removeItem(OLD_RESUME_KEY);
   } catch {
-    return null;
+    // 読めなければ最初から
   }
+  return saved;
 }
 
 interface FlowContextValue {
@@ -74,7 +69,7 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     try {
-      const saved = sessionStorage.getItem(KEY) ?? takeResume();
+      const saved = loadSaved();
       // 保存済みの続きを読み込むのは最初の1回だけ
       // eslint-disable-next-line react-hooks/set-state-in-effect
       if (saved) setState({ ...INITIAL, ...(JSON.parse(saved) as FlowState) });
@@ -87,7 +82,7 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!loaded) return;
     try {
-      sessionStorage.setItem(KEY, JSON.stringify(state));
+      localStorage.setItem(KEY, JSON.stringify(state));
     } catch {
       // 保存できなくても画面は動く
     }

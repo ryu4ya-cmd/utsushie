@@ -7,7 +7,6 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { BackHeader, CtaButton, ErrorBox, Screen } from "@/components/ui";
-import { keepFlowForLogin } from "@/lib/flow";
 import { KIND_LABEL } from "@/lib/quota";
 import { EMAIL_CODE_LOGIN, GOOGLE_LOGIN } from "@/lib/supabase/config";
 import { sendErrorMessage } from "@/lib/supabase/messages";
@@ -100,7 +99,6 @@ function Login() {
     sending.current = true;
     setBusy(true);
     setError(null);
-    keepFlowForLogin();
     rememberNext(next);
     try {
       localStorage.setItem(EMAIL_KEY, email.trim());
