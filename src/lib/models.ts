@@ -8,8 +8,12 @@ export const MODEL_LABEL: Record<FinalModel, string> = {
   "veo-3.1": "Veo 3.1",
 };
 
-/** セリフがあれば Kling 3.0（日本語のリップシンク）、なければ Veo 3.1 */
-export function chooseFinalModel(plan: Plan): FinalModel {
+/**
+ * 写真から作るときは Kling 3.0（画像→動画。品質比較で最も良かった）。
+ * 一文からのときは、セリフがあれば Kling 3.0（日本語のリップシンク）、なければ Veo 3.1
+ */
+export function chooseFinalModel(plan: Plan, fromImage = false): FinalModel {
+  if (fromImage) return "kling-3.0";
   return plan.shots.some((s) => s.dialogue.length > 0) ? "kling-3.0" : "veo-3.1";
 }
 

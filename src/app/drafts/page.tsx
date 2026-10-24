@@ -8,12 +8,13 @@ import { BackHeader, CtaButton, ErrorBox, Screen, Spinner, StepBar, WaitForFlow 
 import { LoginRequiredError, QuotaError, requestPlan, startDrafts, startFinal } from "@/lib/api";
 import { useFlow } from "@/lib/flow";
 import { MODEL_LABEL } from "@/lib/models";
+import { cropPhoto } from "@/lib/photo";
 import { useJobs } from "@/lib/useJobs";
 
 export default function DraftsPage() {
   const router = useRouter();
   const { state, loaded, update } = useFlow();
-  const { brief, planned, draftIds, pick } = state;
+  const { brief, planned, draftIds, pick, photo } = state;
   const [error, setError] = useState<string | null>(null);
   // 回数切れは「もう一度」を押しても変わらないので、ボタンを出さない
   const [quota, setQuota] = useState(false);
@@ -27,7 +28,7 @@ export default function DraftsPage() {
   // 指示文づくり → 下書き2本の生成を順に始める
   useEffect(() => {
     if (!loaded || busy.current) return;
-    if (!brief.sentence_ja.trim()) {
+    if (!brief.sentence_ja.trim() && !photo) {
       router.replace("/create");
       return;
     }
@@ -37,7 +38,9 @@ export default function DraftsPage() {
       try {
         const p = planned ?? (await requestPlan(brief));
         if (!planned) update({ planned: p });
-        update({ draftIds: await startDrafts(brief, p.plan) });
+        // 写真は動画の縦横比に合わせて切り取ってから送る
+        const image = photo ? await cropPhoto(photo, p.plan.aspect_ratio) : null;
+        update({ draftIds: await startDrafts(brief, p.plan, image) });
       } catch (e) {
         if (e instanceof LoginRequiredError) return router.replace("/login?next=/drafts");
         setQuota(e instanceof QuotaError);
@@ -46,7 +49,7 @@ export default function DraftsPage() {
         busy.current = false;
       }
     })();
-  }, [loaded, brief, planned, draftIds.length, router, update, attempt]);
+  }, [loaded, brief, planned, draftIds.length, photo, router, update, attempt]);
 
   const ready = jobs.length === 2 && jobs.every((j) => j?.state === "done");
   const progress = jobs.length ? Math.min(...jobs.map((j) => j?.progress ?? 0)) : 0;
@@ -58,7 +61,8 @@ export default function DraftsPage() {
     setStarting(true);
     setError(null);
     try {
-      const finalId = await startFinal(brief, planned.plan, planned.model);
+      const image = photo ? await cropPhoto(photo, planned.plan.aspect_ratio) : null;
+      const finalId = await startFinal(brief, planned.plan, planned.model, image);
       update({ finalId });
       router.push("/generating");
     } catch (e) {
@@ -118,14 +122,25 @@ export default function DraftsPage() {
               </div>
               {openPrompt ? (
                 <div className="flex flex-col gap-2 text-xs leading-relaxed text-ink/85">
-                  <p>本番は {MODEL_LABEL[planned.model]} で作ります（{planned.model === "kling-3.0" ? "セリフあり" : "セリフなし"}）。</p>
+                  <p>
+                    本番は {MODEL_LABEL[planned.model]} で作ります（
+                    {photo ? "写真から" : planned.model === "kling-3.0" ? "セリフあり" : "セリフなし"}）。
+                  </p>
                   <pre className="max-h-48 overflow-auto rounded-lg bg-bg p-2.5 font-mono text-[11px] whitespace-pre-wrap">{planned.prompt}</pre>
                   {planned.plan.assumptions_ja.map((a) => (
                     <p key={a} className="text-muted">・{a}</p>
                   ))}
                 </div>
               ) : (
-                <p className="text-xs leading-relaxed text-muted">「{brief.sentence_ja}」→ カメラ・動き・音まで指定した指示文</p>
+                <div className="flex items-center gap-2.5">
+                  {photo && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={photo.src} alt="元の写真" className="size-10 flex-none rounded-md object-cover" />
+                  )}
+                  <p className="text-xs leading-relaxed text-muted">
+                    {photo ? "写真＋" : ""}「{brief.sentence_ja || "おまかせ"}」→ カメラ・動き・音まで指定した指示文
+                  </p>
+                </div>
               )}
             </div>
 

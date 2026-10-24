@@ -38,13 +38,14 @@ async function post<T>(url: string, body: unknown): Promise<T> {
 
 export const requestPlan = (brief: Brief) => post<PlanResult>("/api/plan", brief);
 
-// 本番モードでは設計図から動画APIへの指示文を作るので、設計図も送る（練習モードでは使わない）
-export const startDrafts = (brief: Brief, plan: Plan) =>
-  post<{ ids: string[] }>("/api/jobs", { kind: "draft", duration_sec: brief.duration_sec, sound: brief.sound, plan }).then(
+// 本番モードでは設計図から動画APIへの指示文を作るので、設計図も送る（練習モードでは使わない）。
+// 写真から作るときは、切り取った写真（data URL）を image で送る
+export const startDrafts = (brief: Brief, plan: Plan, image: string | null = null) =>
+  post<{ ids: string[] }>("/api/jobs", { kind: "draft", duration_sec: brief.duration_sec, sound: brief.sound, plan, image }).then(
     (r) => r.ids,
   );
 
-export const startFinal = (brief: Brief, plan: Plan, model: FinalModel) =>
-  post<{ ids: string[] }>("/api/jobs", { kind: "final", duration_sec: brief.duration_sec, sound: brief.sound, plan, model }).then(
+export const startFinal = (brief: Brief, plan: Plan, model: FinalModel, image: string | null = null) =>
+  post<{ ids: string[] }>("/api/jobs", { kind: "final", duration_sec: brief.duration_sec, sound: brief.sound, plan, model, image }).then(
     (r) => r.ids[0],
   );

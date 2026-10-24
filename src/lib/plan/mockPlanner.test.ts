@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { DEFAULT_IMAGE_SENTENCE, parseBrief } from "@/lib/brief";
 import { chooseFinalModel } from "@/lib/models";
 import type { Brief } from "@/lib/types";
 import { check } from "./build";
@@ -11,6 +12,7 @@ const brief = (patch: Partial<Brief>): Brief => ({
   duration_sec: 10,
   sound: true,
   subtitles: true,
+  from_image: false,
   ...patch,
 });
 
@@ -35,5 +37,19 @@ describe("mockPlan", () => {
   it("セリフありは Kling 3.0、なしは Veo 3.1", () => {
     expect(chooseFinalModel(mockPlan(brief({ sentence_ja: "猫が「にゃっ」と鳴く" })))).toBe("kling-3.0");
     expect(chooseFinalModel(mockPlan(brief({})))).toBe("veo-3.1");
+  });
+
+  it("写真から作るときは写真を最初のコマにし、セリフがなくても Kling 3.0", () => {
+    const p = mockPlan(brief({ from_image: true, sentence_ja: "髪が風になびく" }));
+    expect(check(p)).toEqual([]);
+    expect(p.shots[0].action).toContain("Animate the input image");
+    expect(p.style).toContain("input image");
+    expect(chooseFinalModel(p, true)).toBe("kling-3.0");
+  });
+
+  it("写真から作るときは一文を空欄にでき、おまかせの動きを使う", () => {
+    const input = { ...brief({}), sentence_ja: "  " };
+    expect(parseBrief(input)).toEqual({ error: "一文を書いてください" });
+    expect(parseBrief({ ...input, from_image: true })).toMatchObject({ brief: { sentence_ja: DEFAULT_IMAGE_SENTENCE, from_image: true } });
   });
 });
