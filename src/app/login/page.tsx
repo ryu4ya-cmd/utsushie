@@ -5,11 +5,12 @@
 // ログインしていれば、今日あと何回作れるかとログアウトを出す。
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { BackHeader, CtaButton, ErrorBox, Screen } from "@/components/ui";
 import { keepFlowForLogin } from "@/lib/flow";
 import { KIND_LABEL } from "@/lib/quota";
 import { EMAIL_CODE_LOGIN, GOOGLE_LOGIN } from "@/lib/supabase/config";
+import { sendErrorMessage } from "@/lib/supabase/messages";
 import { supabase, useServerCheck, useSession } from "@/lib/supabase/browser";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -90,9 +91,13 @@ function Login() {
     if (check?.state === "ok" && next) router.replace(next);
   }, [check, next, router]);
 
+  // キーボードの「開く」とボタンが続けて押されても、メールは1通だけ送る
+  const sending = useRef(false);
+
   const sendLink = async () => {
     const sb = supabase();
-    if (!sb || !EMAIL.test(email.trim())) return;
+    if (!sb || !EMAIL.test(email.trim()) || sending.current) return;
+    sending.current = true;
     setBusy(true);
     setError(null);
     keepFlowForLogin();
@@ -103,8 +108,9 @@ function Login() {
       // 残せなくてもログインはできる
     }
     const { error: e } = await sb.auth.signInWithOtp({ email: email.trim(), options: { emailRedirectTo: `${location.origin}/login` } });
+    sending.current = false;
     setBusy(false);
-    if (e) setError(e.status === 429 ? "メールを送りすぎました。少し待ってからもう一度お試しください。" : `メールを送れませんでした（${e.message}）。`);
+    if (e) setError(sendErrorMessage(e));
     else setSent(true);
   };
 
