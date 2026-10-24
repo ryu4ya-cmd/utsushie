@@ -1,0 +1,620 @@
+[
+ {
+  "title_ja": "雨の交差点の「また明日ね」",
+  "aspect_ratio": "9:16",
+  "duration_sec": 15,
+  "style": "photorealistic, natural light, rainy dusk with neon reflections",
+  "setting": "The Shibuya scramble crossing in Tokyo at dusk in steady rain, wet asphalt reflecting neon signs, crowds with umbrellas.",
+  "characters": [
+   {
+    "id": "A",
+    "label_ja": "女子高生",
+    "sheet": "a Japanese high school girl about 17 years old, soft round face, shoulder-length straight black hair with bangs, navy blazer school uniform with a red ribbon tie and a gray pleated skirt, holding a clear plastic umbrella",
+    "voice": "bright, friendly young female voice"
+   }
+  ],
+  "shots": [
+   {
+    "start": 0,
+    "end": 8,
+    "framing": "wide shot",
+    "camera": "slow push-in",
+    "characters": [
+     "A"
+    ],
+    "wardrobe": {},
+    "action": "Crowds with umbrellas cross the scramble crossing in the rain; the camera slowly pushes in toward A, who walks away from the camera in the middle of the crossing.",
+    "dialogue": [],
+    "sfx": [
+     "rain pattering on many umbrellas"
+    ],
+    "ambience": [
+     "pedestrian crossing signal beeping",
+     "distant city traffic"
+    ]
+   },
+   {
+    "start": 8,
+    "end": 15,
+    "framing": "medium close-up",
+    "camera": "static",
+    "characters": [
+     "A"
+    ],
+    "wardrobe": {},
+    "action": "A stops, turns back over her shoulder toward the camera, smiles warmly and gives a small wave; raindrops drip from the edge of her umbrella.",
+    "dialogue": [
+     {
+      "speaker": "A",
+      "line_ja": "また明日ね",
+      "delivery": "cheerful and warm, with a light laugh",
+      "at": 10
+     }
+    ],
+    "sfx": [
+     "raindrops on her umbrella, close"
+    ],
+    "ambience": [
+     "soft rain"
+    ]
+   }
+  ],
+  "music": null,
+  "on_screen_text": [],
+  "negative": [
+   "subtitles",
+   "captions",
+   "watermark",
+   "logo",
+   "distorted hands",
+   "extra limbs",
+   "other people in focus"
+  ],
+  "elements_ja": [
+   {
+    "element": "雨",
+    "shot": 1
+   },
+   {
+    "element": "渋谷の交差点",
+    "shot": 1
+   },
+   {
+    "element": "傘をさした女子高生",
+    "shot": 1
+   },
+   {
+    "element": "振り返る",
+    "shot": 2
+   },
+   {
+    "element": "「また明日ね」",
+    "shot": 2
+   },
+   {
+    "element": "笑う",
+    "shot": 2
+   }
+  ],
+  "assumptions_ja": [
+   "時間帯は夕方",
+   "話しかける相手は見ている人（カメラ）",
+   "傘はビニール傘"
+  ],
+  "safety": {
+   "ok": true,
+   "notes_ja": "未成年のため日常的な描写に限定"
+  }
+ },
+ {
+  "title_ja": "柴犬とスイカと風鈴",
+  "aspect_ratio": "9:16",
+  "duration_sec": 15,
+  "style": "photorealistic, natural light, bright summer afternoon",
+  "setting": "The wooden veranda (engawa) of an old Japanese house on a sunny summer afternoon, a green garden beyond.",
+  "characters": [
+   {
+    "id": "A",
+    "label_ja": "柴犬",
+    "sheet": "a red-and-white Shiba Inu dog with a fox-like face, upright triangular ears, cream cheeks and chest, a tightly curled tail, wearing a thin red collar",
+    "voice": null
+   }
+  ],
+  "shots": [
+   {
+    "start": 0,
+    "end": 8,
+    "framing": "medium shot",
+    "camera": "static with a very slow push-in",
+    "characters": [
+     "A"
+    ],
+    "wardrobe": {},
+    "action": "A lies on the sunlit veranda and happily munches a triangular slice of red watermelon on a small plate, juice on its muzzle.",
+    "dialogue": [],
+    "sfx": [
+     "juicy crunching and chewing"
+    ],
+    "ambience": [
+     "cicadas singing in the garden"
+    ]
+   },
+   {
+    "start": 8,
+    "end": 15,
+    "framing": "close-up",
+    "camera": "rack focus from the wind chime to the dog",
+    "characters": [
+     "A"
+    ],
+    "wardrobe": {},
+    "action": "A glass wind chime with a paper strip hangs from the eaves; a gentle breeze sways it and it rings once. Focus shifts to A, who lifts its head and perks its ears.",
+    "dialogue": [],
+    "sfx": [
+     "one clear glass wind chime ring, chirin"
+    ],
+    "ambience": [
+     "soft breeze",
+     "cicadas"
+    ]
+   }
+  ],
+  "music": null,
+  "on_screen_text": [],
+  "negative": [
+   "subtitles",
+   "captions",
+   "watermark",
+   "logo",
+   "distorted paws",
+   "extra limbs",
+   "people"
+  ],
+  "elements_ja": [
+   {
+    "element": "柴犬",
+    "shot": 1
+   },
+   {
+    "element": "縁側",
+    "shot": 1
+   },
+   {
+    "element": "スイカを食べる",
+    "shot": 1
+   },
+   {
+    "element": "風鈴がチリンと鳴る",
+    "shot": 2
+   },
+   {
+    "element": "夏の午後",
+    "shot": 1
+   }
+  ],
+  "assumptions_ja": [
+   "夏らしさとしてセミの声を追加",
+   "風鈴はガラス製"
+  ],
+  "safety": {
+   "ok": true,
+   "notes_ja": ""
+  }
+ },
+ {
+  "title_ja": "大将の「へい、お待ち！」",
+  "aspect_ratio": "9:16",
+  "duration_sec": 10,
+  "style": "photorealistic, warm tungsten light, steamy kitchen",
+  "setting": "The open kitchen behind the wooden counter of a small Japanese ramen shop at night, big pots of boiling water.",
+  "characters": [
+   {
+    "id": "A",
+    "label_ja": "大将",
+    "sheet": "a Japanese ramen chef in his 50s, square face with a short stubble beard, buzz-cut black hair, white twisted headband, black T-shirt, dark navy apron, thick forearms",
+    "voice": "loud, gruff, energetic middle-aged male voice"
+   }
+  ],
+  "shots": [
+   {
+    "start": 0,
+    "end": 4,
+    "framing": "close-up",
+    "camera": "static",
+    "characters": [
+     "A"
+    ],
+    "wardrobe": {},
+    "action": "A's hand yanks a deep mesh noodle strainer out of boiling water, steam bursting up.",
+    "dialogue": [],
+    "sfx": [
+     "boiling water bubbling",
+     "water splashing from the strainer"
+    ],
+    "ambience": []
+   },
+   {
+    "start": 4,
+    "end": 10,
+    "framing": "medium shot",
+    "camera": "static",
+    "characters": [
+     "A"
+    ],
+    "wardrobe": {},
+    "action": "A snaps the strainer down twice with a powerful shake, water flying off, then looks up at the customer with a big grin and shouts with his mouth wide open.",
+    "dialogue": [
+     {
+      "speaker": "A",
+      "line_ja": "へい、お待ち！",
+      "delivery": "shouted, fast and energetic",
+      "at": 7
+     }
+    ],
+    "sfx": [
+     "sharp water flicks from the strainer"
+    ],
+    "ambience": [
+     "low chatter of customers"
+    ]
+   }
+  ],
+  "music": null,
+  "on_screen_text": [],
+  "negative": [
+   "subtitles",
+   "captions",
+   "watermark",
+   "logo",
+   "distorted hands",
+   "extra limbs",
+   "brand names"
+  ],
+  "elements_ja": [
+   {
+    "element": "ラーメン屋の大将",
+    "shot": 2
+   },
+   {
+    "element": "湯切り",
+    "shot": 1
+   },
+   {
+    "element": "「へい、お待ち！」",
+    "shot": 2
+   },
+   {
+    "element": "元気に叫ぶ",
+    "shot": 2
+   }
+  ],
+  "assumptions_ja": [
+   "尺は10秒（セリフが短く動作も1つのため）",
+   "大将は50代の男性"
+  ],
+  "safety": {
+   "ok": true,
+   "notes_ja": ""
+  }
+ },
+ {
+  "title_ja": "三毛猫の朝",
+  "aspect_ratio": "9:16",
+  "duration_sec": 15,
+  "style": "3D animated feature film style, soft morning light",
+  "setting": "A small cozy home and the quiet residential street outside it on a sunny morning.",
+  "characters": [
+   {
+    "id": "A",
+    "label_ja": "三毛猫",
+    "sheet": "an anthropomorphic calico kitten who walks upright, white fur with large orange and black patches, a black patch over the left ear, an orange patch around the right eye, big green eyes, small pink nose",
+    "voice": null
+   }
+  ],
+  "shots": [
+   {
+    "start": 0,
+    "end": 5,
+    "framing": "medium shot",
+    "camera": "static",
+    "characters": [
+     "A"
+    ],
+    "wardrobe": {
+     "A": "light blue pajamas"
+    },
+    "action": "In a small bed, A wakes up as the alarm rings, stretches its arms and gives a big yawn.",
+    "dialogue": [],
+    "sfx": [
+     "alarm clock ringing then clicked off",
+     "a small yawn"
+    ],
+    "ambience": [
+     "birds chirping outside"
+    ]
+   },
+   {
+    "start": 5,
+    "end": 10,
+    "framing": "medium close-up",
+    "camera": "static",
+    "characters": [
+     "A"
+    ],
+    "wardrobe": {
+     "A": "light blue pajamas"
+    },
+    "action": "At a bathroom sink, A brushes its teeth in front of a mirror, foam on its mouth.",
+    "dialogue": [],
+    "sfx": [
+     "brisk toothbrush scrubbing",
+     "water running"
+    ],
+    "ambience": []
+   },
+   {
+    "start": 10,
+    "end": 15,
+    "framing": "wide shot",
+    "camera": "handheld follow",
+    "characters": [
+     "A"
+    ],
+    "wardrobe": {
+     "A": "white shirt, yellow school hat and a red school backpack"
+    },
+    "action": "A runs out the front door and down the street toward school, backpack bouncing.",
+    "dialogue": [],
+    "sfx": [
+     "quick light footsteps",
+     "backpack bouncing"
+    ],
+    "ambience": [
+     "birds chirping"
+    ]
+   }
+  ],
+  "music": null,
+  "on_screen_text": [],
+  "negative": [
+   "subtitles",
+   "captions",
+   "watermark",
+   "logo",
+   "extra limbs",
+   "a different cat",
+   "changing fur pattern"
+  ],
+  "elements_ja": [
+   {
+    "element": "同じ三毛猫",
+    "shot": 1
+   },
+   {
+    "element": "朝起きる",
+    "shot": 1
+   },
+   {
+    "element": "歯をみがく",
+    "shot": 2
+   },
+   {
+    "element": "学校へ走っていく",
+    "shot": 3
+   }
+  ],
+  "assumptions_ja": [
+   "人のように立って暮らす猫として3Dアニメ風にした",
+   "服はパジャマから通学服に着替える",
+   "毛の模様（左耳が黒、右目まわりが茶）を全カットで固定"
+  ],
+  "safety": {
+   "ok": true,
+   "notes_ja": ""
+  }
+ },
+ {
+  "title_ja": "花火の「きれいだね」",
+  "aspect_ratio": "9:16",
+  "duration_sec": 15,
+  "style": "photorealistic, night, colorful firework light flickering on faces",
+  "setting": "A summer festival at night by a riverbank, paper lanterns and glowing food stalls, large fireworks bursting in the sky.",
+  "characters": [
+   {
+    "id": "A",
+    "label_ja": "浴衣の女性",
+    "sheet": "a Japanese young woman in her early 20s, gentle oval face, black hair tied up in a bun with a red flower hair ornament, navy yukata with white morning glory pattern and a red obi",
+    "voice": "soft, clear female voice"
+   },
+   {
+    "id": "B",
+    "label_ja": "浴衣の男性",
+    "sheet": "a Japanese young man in his early 20s, slim face, short black hair, charcoal gray striped yukata with a black obi",
+    "voice": "calm, low male voice"
+   }
+  ],
+  "shots": [
+   {
+    "start": 0,
+    "end": 8,
+    "framing": "wide shot from behind",
+    "camera": "slow upward tilt",
+    "characters": [
+     "A",
+     "B"
+    ],
+    "wardrobe": {},
+    "action": "A and B stand side by side among the festival crowd, seen from behind, and look up as big fireworks bloom over the river.",
+    "dialogue": [],
+    "sfx": [
+     "deep firework booms and crackling"
+    ],
+    "ambience": [
+     "festival crowd murmur"
+    ]
+   },
+   {
+    "start": 8,
+    "end": 15,
+    "framing": "medium two-shot from the front",
+    "camera": "static",
+    "characters": [
+     "A",
+     "B"
+    ],
+    "wardrobe": {},
+    "action": "Their faces glow with changing colors from the fireworks. The woman in the navy yukata (A) speaks first, still looking up; a beat later the man in the gray yukata (B) nods and answers.",
+    "dialogue": [
+     {
+      "speaker": "A",
+      "line_ja": "きれいだね",
+      "delivery": "softly, with admiration",
+      "at": 9.5
+     },
+     {
+      "speaker": "B",
+      "line_ja": "うん",
+      "delivery": "quietly, warm",
+      "at": 12
+     }
+    ],
+    "sfx": [
+     "distant firework booms"
+    ],
+    "ambience": [
+     "faint crowd"
+    ]
+   }
+  ],
+  "music": null,
+  "on_screen_text": [],
+  "negative": [
+   "subtitles",
+   "captions",
+   "watermark",
+   "logo",
+   "distorted hands",
+   "extra limbs",
+   "other people in focus"
+  ],
+  "elements_ja": [
+   {
+    "element": "夏祭りの夜",
+    "shot": 1
+   },
+   {
+    "element": "浴衣の二人",
+    "shot": 1
+   },
+   {
+    "element": "花火を見上げる",
+    "shot": 1
+   },
+   {
+    "element": "「きれいだね」",
+    "shot": 2
+   },
+   {
+    "element": "「うん」",
+    "shot": 2
+   }
+  ],
+  "assumptions_ja": [
+   "二人は20代前半の女性と男性（声を分けやすくするため）",
+   "場所は川沿い"
+  ],
+  "safety": {
+   "ok": true,
+   "notes_ja": ""
+  }
+ },
+ {
+  "title_ja": "本日開店のお辞儀",
+  "aspect_ratio": "9:16",
+  "duration_sec": 10,
+  "style": "photorealistic, soft morning sunlight, calm and clean",
+  "setting": "The entrance of a small new neighborhood shop with a white noren curtain on a quiet street on a clear morning.",
+  "characters": [
+   {
+    "id": "A",
+    "label_ja": "店主",
+    "sheet": "a Japanese shop owner, a man in his 40s, kind face, short neat black hair, crisp white shirt with rolled sleeves, dark green apron",
+    "voice": null
+   }
+  ],
+  "shots": [
+   {
+    "start": 0,
+    "end": 4,
+    "framing": "close-up",
+    "camera": "slow push-in",
+    "characters": [],
+    "wardrobe": {},
+    "action": "A new light wooden signboard beside the entrance, facing the camera, with four large black brush-calligraphy characters written vertically: 「本日開店」.",
+    "dialogue": [],
+    "sfx": [],
+    "ambience": [
+     "quiet morning street",
+     "sparrows chirping"
+    ]
+   },
+   {
+    "start": 4,
+    "end": 10,
+    "framing": "medium wide shot",
+    "camera": "static",
+    "characters": [
+     "A"
+    ],
+    "wardrobe": {},
+    "action": "A stands beside the 「本日開店」 sign, hands together in front, bows deeply at about 45 degrees, holds the bow for two seconds, then straightens up with a gentle smile.",
+    "dialogue": [],
+    "sfx": [
+     "soft rustle of the apron"
+    ],
+    "ambience": [
+     "quiet morning street"
+    ]
+   }
+  ],
+  "music": null,
+  "on_screen_text": [
+   {
+    "text_ja": "本日開店",
+    "shot": 1
+   }
+  ],
+  "negative": [
+   "subtitles",
+   "captions",
+   "watermark",
+   "logo",
+   "distorted hands",
+   "garbled characters",
+   "extra text on the sign"
+  ],
+  "elements_ja": [
+   {
+    "element": "「本日開店」の看板",
+    "shot": 1
+   },
+   {
+    "element": "店主",
+    "shot": 2
+   },
+   {
+    "element": "深くお辞儀",
+    "shot": 2
+   }
+  ],
+  "assumptions_ja": [
+   "店の種類は決めず、のれんのある小さな店",
+   "店主は40代の男性",
+   "看板は木製・縦書き"
+  ],
+  "safety": {
+   "ok": true,
+   "notes_ja": ""
+  }
+ }
+]
