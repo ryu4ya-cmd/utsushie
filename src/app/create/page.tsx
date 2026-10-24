@@ -142,7 +142,7 @@ export default function CreatePage() {
         <div className="flex flex-col gap-2">
           <span className="text-center text-xs text-muted" aria-live="polite">
             {!b.sentence_ja.trim() && !photo
-              ? "上に一文を書くか、例をタップすると作れます"
+              ? "一文を書くか、例をタップするか、写真を選ぶと作れます"
               : left === 0
                 ? "今日の分は使い切りました。日本時間の0時にまた作れます"
                 : left !== null

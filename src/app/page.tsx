@@ -24,7 +24,7 @@ const OPTIONS: { id: Purpose | null; title: string; note: string; icon: React.Re
   {
     id: null,
     title: "商品紹介",
-    note: "商品写真を動かす広告",
+    note: "広告向けのひな形",
     icon: <><path d="M5 9h18l-1.5 15h-15z" /><path d="M10 9V7a4 4 0 0 1 8 0v2" /></>,
   },
   {
@@ -96,7 +96,9 @@ export default function PurposePage() {
         >
           <span className="flex min-w-0 flex-1 flex-col">
             <span className="text-sm font-bold">{resume.label}</span>
-            <span className="truncate text-xs text-muted">「{state.brief.sentence_ja}」</span>
+            <span className="truncate text-xs text-muted">
+              {state.brief.sentence_ja ? `「${state.brief.sentence_ja}」` : state.photo ? "写真から・動きはおまかせ" : ""}
+            </span>
           </span>
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="var(--color-accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M7 4l5 5-5 5" />
@@ -110,7 +112,7 @@ export default function PurposePage() {
           <path d="M10 9v5M10 6h.01" />
         </svg>
         <p className="text-[13px] leading-relaxed text-ink/85">
-          プロンプトの書き方は知らなくて大丈夫。日本語の一文だけで、声や効果音まで入った動画ができます。
+          プロンプトの書き方は知らなくて大丈夫。日本語の一文だけで、声や効果音まで入った動画ができます。手持ちの写真を動かすこともできます（次の画面で選べます）。
         </p>
       </div>
 

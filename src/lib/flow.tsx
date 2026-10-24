@@ -36,6 +36,20 @@ export const DEFAULT_BRIEF: Brief = {
 
 const INITIAL: FlowState = { brief: DEFAULT_BRIEF, planned: null, draftIds: [], pick: "a", finalId: null, photo: null };
 const KEY = "utsushie.flow.v1";
+/**
+ * 写真は大きい（1MB ほど）ので別に残す。入力のたびに写真まで書き直すと、スマホで文字を打つのが重くなるため。
+ * 写真が残っていなければ、写真なしの続きとして読む
+ */
+const PHOTO_KEY = "utsushie.flow.photo.v1";
+
+function loadPhoto(): Photo | null {
+  try {
+    const saved = localStorage.getItem(PHOTO_KEY);
+    return saved ? (JSON.parse(saved) as Photo) : null;
+  } catch {
+    return null;
+  }
+}
 /** 前は sessionStorage（タブごと）に保存していた。そちらに残っている続きも読む */
 const OLD_SESSION_KEY = KEY;
 /** 前は、ログインのメールを開いた新しいタブのためにここへ写していた */
@@ -76,9 +90,17 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     try {
       const saved = loadSaved();
-      // 保存済みの続きを読み込むのは最初の1回だけ
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (saved) setState({ ...INITIAL, ...(JSON.parse(saved) as FlowState) });
+      if (saved) {
+        const s: FlowState = { ...INITIAL, ...(JSON.parse(saved) as FlowState) };
+        // 前の版は写真も同じところに残していた
+        const photo = s.photo ?? loadPhoto();
+        const next = photo || !s.brief.from_image
+          ? { ...s, photo }
+          : { ...s, photo: null, brief: { ...s.brief, from_image: false }, planned: null, draftIds: [] };
+        // 保存済みの続きを読み込むのは最初の1回だけ
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setState(next);
+      }
     } catch {
       // 読めなければ最初から
     }
@@ -88,19 +110,27 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!loaded) return;
     try {
-      localStorage.setItem(KEY, JSON.stringify(state));
+      localStorage.setItem(KEY, JSON.stringify({ ...state, photo: null }));
     } catch {
-      // 保存できなくても画面は動く。写真で保存領域があふれたときは、写真を除いて残す
-      try {
-        if (state.photo) {
-          const brief = { ...state.brief, from_image: false };
-          localStorage.setItem(KEY, JSON.stringify({ ...state, photo: null, brief, planned: null, draftIds: [] }));
-        }
-      } catch {
-        // それでも保存できなければあきらめる
-      }
+      // 保存できなくても画面は動く
     }
   }, [state, loaded]);
+
+  // 写真は変わったときだけ書く。保存領域があふれたら写真は残さない（読み込むときに写真なしの続きになる）
+  const photo = state.photo;
+  useEffect(() => {
+    if (!loaded) return;
+    try {
+      if (photo) localStorage.setItem(PHOTO_KEY, JSON.stringify(photo));
+      else localStorage.removeItem(PHOTO_KEY);
+    } catch {
+      try {
+        localStorage.removeItem(PHOTO_KEY);
+      } catch {
+        // あきらめる
+      }
+    }
+  }, [photo, loaded]);
 
   const update = useCallback((patch: Partial<FlowState>) => setState((s) => ({ ...s, ...patch })), []);
   // 入力が変わったら、前の結果は使えないので消す

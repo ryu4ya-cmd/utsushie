@@ -161,14 +161,14 @@ export function PhotoPicker({
             type="button"
             onClick={choose}
             disabled={reading}
-            className="flex min-h-10 flex-1 items-center justify-center rounded-xl border border-line px-3 text-[13px] hover:border-accent disabled:opacity-60"
+            className="flex min-h-11 flex-1 items-center justify-center rounded-xl border border-line px-3 text-[13px] hover:border-accent disabled:opacity-60"
           >
             {reading ? "読み込み中…" : "写真を変える"}
           </button>
           <button
             type="button"
             onClick={() => onChange(null)}
-            className="flex min-h-10 flex-1 items-center justify-center rounded-xl border border-line px-3 text-[13px] text-muted hover:border-accent hover:text-ink"
+            className="flex min-h-11 flex-1 items-center justify-center rounded-xl border border-line px-3 text-[13px] text-muted hover:border-accent hover:text-ink"
           >
             写真を外す
           </button>
