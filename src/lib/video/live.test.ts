@@ -401,3 +401,75 @@ describe("練習モードのAPIは外部を一切呼ばない", () => {
     expect((await res.json()).practice).toBe(true);
   });
 });
+
+describe("CogVideoX-Flash（無料の設定）", () => {
+  const FREE: Env = { UTSUSHIE_MODE: "live", UTSUSHIE_JOB_SECRET: SECRET, UTSUSHIE_VIDEO: "free", ZHIPU_API_KEY: "zk-test" };
+  const BASE = "https://open.bigmodel.cn/api/paas/v4";
+  const image = { mime: "image/jpeg" as const, base64: "/9j/AAAA", width: 720, height: 1280 };
+
+  it("セリフありでも CogVideoX-Flash に、縦の大きさ・画質優先・音ありで頼み、できたら動画を返す", async () => {
+    let status = "PROCESSING";
+    const { fn, calls } = fakeFetch((c) =>
+      c.method === "POST"
+        ? json({ id: "cv-1", model: "cogvideox-flash", task_status: "PROCESSING" })
+        : json({ task_status: status, video_result: [{ url: "https://aigc-files.example/v.mp4", cover_image_url: "https://aigc-files.example/c.jpg" }] }),
+    );
+    const [id] = await startLive({ kind: "final", duration: 10, plan: WITH_LINE, sound: true }, deps(fn, T0, FREE));
+    expect(calls[0].url).toBe(`${BASE}/videos/generations`);
+    expect(calls[0].headers.authorization).toBe("Bearer zk-test");
+    expect(calls[0].body).toMatchObject({ model: "cogvideox-flash", size: "1080x1920", quality: "quality", with_audio: true });
+    const prompt = String(calls[0].body?.prompt);
+    expect(Array.from(prompt).length).toBeLessThanOrEqual(512);
+    expect(prompt).not.toContain("10 seconds");
+    expect(prompt).not.toContain("Shot 2");
+    expect(decodeLiveJob(id, FREE)).toMatchObject({ model: "cogvideox-flash", steps: 1, next: null });
+
+    expect(await liveStatus(id, deps(fn, T0 + 30_000, FREE))).toMatchObject({ state: "running", model: "cogvideox-flash" });
+    expect(calls[1].url).toBe(`${BASE}/async-result/cv-1`);
+    status = "SUCCESS";
+    expect(await liveStatus(id, deps(fn, T0 + 90_000, FREE))).toMatchObject({ state: "done", videoUrl: `/api/jobs/${id}/video` });
+
+    const video = await liveVideo(id, null, deps(fn, T0, FREE));
+    expect(calls.at(-1)?.url).toBe("https://aigc-files.example/v.mp4");
+    expect(calls.at(-1)?.headers.authorization).toBeUndefined(); // APIキーを動画のサイトに送らない
+    expect(video.status).toBe(200);
+  });
+
+  it("下書きは2本とも速さ優先・音なしで、構図の違いを足しても上限に収まる", async () => {
+    const { fn, calls } = fakeFetch(() => json({ id: `cv-${calls.length}` }));
+    await startLive({ kind: "draft", duration: 15, plan: NO_LINE_15, sound: true }, deps(fn, T0, FREE));
+    expect(calls.map((c) => c.body)).toEqual([
+      expect.objectContaining({ quality: "speed", with_audio: false, prompt: expect.stringContaining("closer framing") }),
+      expect.objectContaining({ quality: "speed", with_audio: false, prompt: expect.stringContaining("wider framing") }),
+    ]);
+  });
+
+  it("写真から作るときは写真を渡し、大きさは送らない", async () => {
+    const photoPlan = mockPlan({ sentence_ja: "髪が風になびく", purpose: "sns_vertical", mood: "auto", duration_sec: 10, sound: true, subtitles: true, from_image: true });
+    const { fn, calls } = fakeFetch(() => json({ id: "cv-img" }));
+    const [id] = await startLive({ kind: "final", duration: 10, plan: photoPlan, sound: true, image }, deps(fn, T0, FREE));
+    expect(calls[0].body).toMatchObject({ model: "cogvideox-flash", image_url: "/9j/AAAA" });
+    expect(calls[0].body).not.toHaveProperty("size");
+    expect(JSON.stringify(decodeLiveJob(id, FREE))).not.toContain("/9j/");
+  });
+
+  it("鍵がなければ呼ばずに止め、Kling や Gemini の鍵は要らない", async () => {
+    expect(() => checkLiveConfig(WITH_LINE, FREE)).not.toThrow();
+    expect(() => checkLiveConfig(WITH_LINE, { ...FREE, ZHIPU_API_KEY: "" })).toThrow(ConfigError);
+    await expect(startLive({ kind: "final", duration: 10, plan: WITH_LINE, sound: true }, deps(never, T0, { ...FREE, ZHIPU_API_KEY: undefined }))).rejects.toBeInstanceOf(ConfigError);
+  });
+
+  it("失敗やエラーはそのまま伝える", async () => {
+    const failed = fakeFetch((c) => (c.method === "POST" ? json({ id: "cv-f" }) : json({ task_status: "FAIL" })));
+    const [id] = await startLive({ kind: "final", duration: 10, plan: WITH_LINE, sound: true }, deps(failed.fn, T0, FREE));
+    await expect(liveStatus(id, deps(failed.fn, T0, FREE))).rejects.toThrow("生成に失敗しました");
+
+    const busy = fakeFetch(() => json({ error: { code: "1302", message: "您的账户已达到速率限制" } }, 429));
+    await expect(startLive({ kind: "final", duration: 10, plan: WITH_LINE, sound: true }, deps(busy.fn, T0, FREE))).rejects.toThrow("速率限制");
+  });
+
+  it("無料の設定がなければ今まで通り Kling / Veo を選ぶ", () => {
+    expect(() => checkLiveConfig(WITH_LINE, { ...ENV })).not.toThrow();
+    expect(() => checkLiveConfig(WITH_LINE, { ...ENV, KLING_ACCESS_KEY: "" })).toThrow(ConfigError);
+  });
+});

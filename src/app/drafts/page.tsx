@@ -125,7 +125,7 @@ export default function DraftsPage() {
                 <div className="flex flex-col gap-2 text-xs leading-relaxed text-ink/85">
                   <p>
                     本番は {MODEL_LABEL[planned.model]} で作ります（
-                    {photo ? "写真から" : planned.model === "kling-3.0" ? "セリフあり" : "セリフなし"}）。
+                    {photo ? "写真から" : planned.model === "cogvideox-flash" ? "数秒・セリフの声なし" : planned.model === "kling-3.0" ? "セリフあり" : "セリフなし"}）。
                   </p>
                   <pre className="max-h-48 overflow-auto rounded-lg bg-bg p-2.5 font-mono text-[11px] whitespace-pre-wrap">{planned.prompt}</pre>
                   {planned.plan.assumptions_ja.map((a) => (
