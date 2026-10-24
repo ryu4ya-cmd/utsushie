@@ -24,7 +24,7 @@ const LIVE_ENV = {
   GEMINI_API_KEY: "gk",
 };
 const PLAN = mockPlan({
-  sentence_ja: "女の子が振り返って「また明日ね」と笑う", purpose: "sns_vertical", mood: "auto", duration_sec: 10, sound: true, subtitles: true,
+  sentence_ja: "女の子が振り返って「また明日ね」と笑う", purpose: "sns_vertical", mood: "auto", duration_sec: 10, sound: true, subtitles: true, from_image: false,
 } satisfies Brief);
 
 interface Call {

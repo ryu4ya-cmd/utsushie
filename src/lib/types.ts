@@ -11,6 +11,8 @@ export interface Brief {
   duration_sec: Duration;
   sound: boolean;
   subtitles: boolean;
+  /** 写真を最初のコマにして動かす（写真そのものは別に送る） */
+  from_image: boolean;
 }
 
 export interface Character {
@@ -62,7 +64,7 @@ export interface SubtitleCue {
   text: string;
 }
 
-/** 本番で使う動画モデル。セリフあり → Kling 3.0、なし → Veo 3.1 */
+/** 本番で使う動画モデル。写真から作るときとセリフありは Kling 3.0、それ以外は Veo 3.1 */
 export type FinalModel = "kling-3.0" | "veo-3.1";
 
 export type JobKind = "draft" | "final";

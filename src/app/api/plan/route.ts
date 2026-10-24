@@ -13,7 +13,7 @@ export async function POST(request: Request) {
   const plan = mockPlan(parsed.brief);
   if (!plan.safety.ok) return Response.json({ error: plan.safety.notes_ja }, { status: 422 });
 
-  const model = chooseFinalModel(plan);
+  const model = chooseFinalModel(plan, parsed.brief.from_image);
   return Response.json({
     plan,
     model,

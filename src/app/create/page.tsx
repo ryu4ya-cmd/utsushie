@@ -1,8 +1,9 @@
 "use client";
 
-// ② 一文と雰囲気を入れる
+// ② 一文と雰囲気を入れる（写真を選べば、その写真から作る）
 
 import { useRouter } from "next/navigation";
+import { PhotoPicker } from "@/components/PhotoPicker";
 import { BackHeader, Chip, CtaButton, Screen, StepBar, Switch, WaitForFlow } from "@/components/ui";
 import { MAX_SENTENCE } from "@/lib/brief";
 import { useFlow } from "@/lib/flow";
@@ -15,6 +16,13 @@ const EXAMPLES = [
   "朝のカフェでラテアートが完成する瞬間",
 ];
 
+// 写真から作るときは、写っているものの「動き」を書いてもらう
+const IMAGE_EXAMPLES = [
+  "髪が風になびいて、ゆっくりこちらに微笑む",
+  "カメラがゆっくり近づき、湯気がふわっと立ちのぼる",
+  "猫があくびをしてから「にゃー」と鳴く",
+];
+
 const MOODS: { id: Mood; label: string }[] = [
   { id: "auto", label: "おまかせ" },
   { id: "cute", label: "かわいい" },
@@ -24,10 +32,13 @@ const MOODS: { id: Mood; label: string }[] = [
 
 export default function CreatePage() {
   const router = useRouter();
-  const { state, loaded, setBrief } = useFlow();
+  const { state, loaded, setBrief, setPhoto } = useFlow();
   const b = state.brief;
+  const photo = state.photo;
   const count = Array.from(b.sentence_ja).length;
-  const canGo = b.sentence_ja.trim().length > 0 && count <= MAX_SENTENCE;
+  // 写真があれば、動かし方は書かなくてもよい（おまかせで自然に動かす）
+  const canGo = (photo !== null || b.sentence_ja.trim().length > 0) && count <= MAX_SENTENCE;
+  const examples = photo ? IMAGE_EXAMPLES : EXAMPLES;
   // ログインの設定があるときは、ログインしてから作る
   const auth = useSession();
   const usage = useUsage(auth.session);
@@ -49,15 +60,17 @@ export default function CreatePage() {
         />
         <StepBar step={2} />
 
+        <PhotoPicker photo={photo} aspectRatio={b.purpose === "sns_vertical" ? "9:16" : "16:9"} onChange={setPhoto} />
+
         <div className="flex flex-col gap-2">
           <label htmlFor="idea" className="font-display text-[22px] font-black">
-            どんな動画にしますか？
+            {photo ? "写真をどう動かしますか？" : "どんな動画にしますか？"}
           </label>
           <textarea
             id="idea"
             rows={3}
             maxLength={MAX_SENTENCE}
-            placeholder="例：夕焼けの海辺で猫が驚いてジャンプする"
+            placeholder={photo ? "例：髪が風になびいて、こちらに微笑む（空欄ならおまかせ）" : "例：夕焼けの海辺で猫が驚いてジャンプする"}
             value={b.sentence_ja}
             onChange={(e) => setBrief({ sentence_ja: e.target.value })}
             className="w-full resize-none rounded-2xl border-[1.5px] border-line bg-surface px-4 py-3.5 text-base leading-relaxed placeholder:text-muted focus:border-accent focus:outline-none"
@@ -70,7 +83,7 @@ export default function CreatePage() {
         <div className="flex flex-col gap-2">
           <span className="text-[13px] text-muted">例をタップして入れる</span>
           <div className="flex flex-col gap-1.5">
-            {EXAMPLES.map((t) => (
+            {examples.map((t) => (
               <button
                 key={t}
                 type="button"
@@ -126,7 +139,7 @@ export default function CreatePage() {
             disabled={!canGo || !auth.loaded || left === 0}
             onClick={() => router.push(needLogin ? "/login?next=/drafts" : "/drafts")}
           >
-            {needLogin ? "ログインして下書きを作る" : "下書きを2本作る"}
+            {needLogin ? "ログインして下書きを作る" : photo ? "写真から下書きを2本作る" : "下書きを2本作る"}
           </CtaButton>
         </div>
       </Screen>

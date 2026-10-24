@@ -1,11 +1,13 @@
 // 生成ジョブを始める。練習モードではサンプル動画を返すジョブIDを作るだけ。
 // 本番モードでは設計図から指示文を作り、Kling 3.0 か Veo 3.1 に生成を頼む。
+// 写真から作るときは、縦横比に合わせて切り取った写真（data URL）が image に入っている（練習モードでも形を確かめる）。
 // Supabase を設定していれば、ログインした人だけが、1日の上限まで作れる（本番モードでは必須）。
 
 import { accountError, caller, LOGIN_REQUIRED } from "@/lib/account";
 import { encodeJob, type JobSpec } from "@/lib/jobs";
 import { appMode } from "@/lib/mode";
 import { limitMessage, limits } from "@/lib/quota";
+import { parseStartImage, type StartImage } from "@/lib/startImage";
 import { spendGeneration } from "@/lib/supabase/server";
 import type { Plan } from "@/lib/types";
 import { ConfigError, checkLiveConfig, liveError, parsePlan, startLive } from "@/lib/video/live";
@@ -18,6 +20,14 @@ export async function POST(request: Request) {
   if (duration !== 10 && duration !== 15) return Response.json({ error: "長さは10秒か15秒です" }, { status: 400 });
   const live = appMode() === "live";
 
+  // 回数を使う前に、写真がおかしくないか確かめる
+  let image: StartImage | null = null;
+  if (body?.image !== undefined && body?.image !== null) {
+    const parsed = parseStartImage(body.image);
+    if ("error" in parsed) return Response.json({ error: parsed.error }, { status: 400 });
+    image = parsed.image;
+  }
+
   try {
     const who = await caller(request, process.env, fetch);
     if (who.configured && !who.user) return Response.json(LOGIN_REQUIRED, { status: 401 });
@@ -29,7 +39,7 @@ export async function POST(request: Request) {
     let plan: Plan | null = null;
     if (live) {
       plan = parsePlan(body?.plan, duration);
-      checkLiveConfig(plan, process.env);
+      checkLiveConfig(plan, process.env, image !== null);
     }
 
     if (who.configured && who.user) {
@@ -44,7 +54,7 @@ export async function POST(request: Request) {
 
     if (live && plan) {
       const ids = await startLive(
-        { kind, duration, plan, sound: body?.sound !== false, owner: who.user },
+        { kind, duration, plan, sound: body?.sound !== false, owner: who.user, image },
         { env: process.env, fetch, now: Date.now() },
       );
       return Response.json({ ids, practice: false });
@@ -61,6 +71,6 @@ export async function POST(request: Request) {
     return Response.json({ ids, practice: true });
   }
 
-  const model = body?.model === "kling-3.0" ? "kling-3.0" : "veo-3.1";
+  const model = image || body?.model === "kling-3.0" ? "kling-3.0" : "veo-3.1";
   return Response.json({ ids: [encodeJob({ kind, variant: null, duration, model, startedAt })], practice: true });
 }

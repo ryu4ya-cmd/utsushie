@@ -1,4 +1,5 @@
-// Kling 3.0（セリフあり）を公式APIで呼ぶ。
+// Kling 3.0（セリフあり・写真から作るとき）を公式APIで呼ぶ。
+// 一文からは text2video、写真からは image2video。写真からのときは縦横比を送らず、写真の縦横で作られる（画面で切り取ってから送る）。
 // 認証はアクセスキーとシークレットキーで作る JWT（HS256、30分で切れる）。
 // 仕様は公開ドキュメントから組み立てたもので、実際の呼び出しではまだ確かめていない（モデル名など要確認）。
 
@@ -24,6 +25,10 @@ export function klingToken(cfg: Pick<KlingConfig, "accessKey" | "secretKey">, no
 
 const TASK_ID = /^[\w-]{1,128}$/;
 
+/** 一文から（text2video）か、写真から（image2video）か。問い合わせの場所も分かれている */
+export type KlingSource = "text" | "image";
+const PATH: Record<KlingSource, string> = { text: "/v1/videos/text2video", image: "/v1/videos/image2video" };
+
 async function call(cfg: KlingConfig, fetcher: FetchLike, path: string, init?: RequestInit) {
   const res = await fetcher(`${cfg.apiBase}${path}`, {
     ...init,
@@ -39,28 +44,27 @@ async function call(cfg: KlingConfig, fetcher: FetchLike, path: string, init?: R
   return data.data;
 }
 
-/** 生成を頼み、タスクIDを返す。下書きは std・5秒・音なし、本番は pro・指定の長さ */
+/** 生成を頼み、タスクIDを返す。下書きは std・5秒・音なし、本番は pro・指定の長さ。req.image があれば写真から作る */
 export async function submitKling(cfg: KlingConfig, req: VideoRequest, fetcher: FetchLike): Promise<string> {
   const draft = req.quality === "draft";
-  const data = await call(cfg, fetcher, "/v1/videos/text2video", {
-    method: "POST",
-    body: JSON.stringify({
-      model_name: cfg.model,
-      prompt: req.prompt,
-      mode: draft ? "std" : "pro",
-      aspect_ratio: req.aspectRatio,
-      duration: String(draft ? 5 : req.durationSec),
-      sound: !draft && req.sound ? "on" : "off",
-    }),
-  });
+  const common = {
+    model_name: cfg.model,
+    prompt: req.prompt,
+    mode: draft ? "std" : "pro",
+    duration: String(draft ? 5 : req.durationSec),
+    sound: !draft && req.sound ? "on" : "off",
+  };
+  const data = req.image
+    ? await call(cfg, fetcher, PATH.image, { method: "POST", body: JSON.stringify({ ...common, image: req.image }) })
+    : await call(cfg, fetcher, PATH.text, { method: "POST", body: JSON.stringify({ ...common, aspect_ratio: req.aspectRatio }) });
   const id = data.task_id;
   if (typeof id !== "string" || !TASK_ID.test(id)) throw new ProviderError("Kling: タスクIDが返ってきませんでした");
   return id;
 }
 
-export async function pollKling(cfg: KlingConfig, taskId: string, fetcher: FetchLike): Promise<ProviderStatus> {
+export async function pollKling(cfg: KlingConfig, taskId: string, fetcher: FetchLike, source: KlingSource = "text"): Promise<ProviderStatus> {
   if (!TASK_ID.test(taskId)) throw new ProviderError("Kling: タスクIDが正しくありません");
-  const data = await call(cfg, fetcher, `/v1/videos/text2video/${taskId}`);
+  const data = await call(cfg, fetcher, `${PATH[source]}/${taskId}`);
   if (data.task_status === "failed") return { state: "failed", message: String(data.task_status_msg ?? "生成に失敗しました") };
   if (data.task_status !== "succeed") return { state: "running" };
   const videos = (data.task_result as { videos?: { url?: unknown }[] } | undefined)?.videos;

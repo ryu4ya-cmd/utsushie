@@ -1,4 +1,4 @@
-// 本番モードの生成ジョブ。セリフあり → Kling 3.0、なし → Veo 3.1 に頼む。
+// 本番モードの生成ジョブ。写真から作るときとセリフあり → Kling 3.0、それ以外 → Veo 3.1 に頼む。
 // 練習モードと同じくサーバーに状態を持たず、動画APIのタスクIDなどをジョブIDに入れておく。
 // ジョブIDには署名を付け、作り替えたIDで勝手に生成（課金）を始められないようにする。
 // 完成した動画は、Supabase の保存場所があればそこへ移す（動画API側の動画はいずれ消えるため）。
@@ -8,6 +8,7 @@ import { chooseFinalModel } from "@/lib/models";
 import type { SupabaseServer } from "@/lib/supabase/config";
 import { hasStoredVideo, putStoredVideo, storedVideoUrl } from "@/lib/supabase/server";
 import { kling, veo } from "@/lib/plan/build";
+import type { StartImage } from "@/lib/startImage";
 import type { Duration, FinalModel, JobKind, JobStatus, Plan } from "@/lib/types";
 import { downloadKling, pollKling, submitKling, type KlingConfig } from "@/lib/video/kling";
 import { ProviderError, type FetchLike, type VideoRequest } from "@/lib/video/types";
@@ -42,6 +43,7 @@ export interface LiveJob {
   next: string | null; // Veo の延長に使う、続きの指示文
   startedAt: number; // この step を始めた時刻（ミリ秒）
   owner?: string | null; // 頼んだ人（Supabase のユーザーID）。保存場所でのフォルダ名になる
+  source?: "image"; // 写真から作ったとき（Kling の問い合わせ先が変わる）。写真そのものはIDに入れない
 }
 
 /** 本番モードで進み具合を問い合わせる間隔。動画APIに負担をかけないよう練習モードより長い */
@@ -137,19 +139,22 @@ export interface StartInput {
   plan: Plan;
   sound: boolean;
   owner?: string | null;
+  /** 写真から作るときの最初のコマ。画面で縦横比に合わせて切り取ってある */
+  image?: StartImage | null;
 }
 
 /** 動画APIを呼ぶ前に、設定がそろっているか確かめる（回数を使ってから設定不足で止まらないように） */
-export function checkLiveConfig(plan: Plan, env: Env): void {
+export function checkLiveConfig(plan: Plan, env: Env, fromImage = false): void {
   secret(env);
-  if (chooseFinalModel(plan) === "kling-3.0") klingConfig(env);
+  if (chooseFinalModel(plan, fromImage) === "kling-3.0") klingConfig(env);
   else veoConfig(env);
 }
 
 /** 下書きなら2本、本番なら1本を頼み、ジョブIDを返す */
 export async function startLive(input: StartInput, deps: LiveDeps): Promise<string[]> {
   secret(deps.env); // 頼んだあとでIDを作れない、ということがないよう先に確かめる
-  const model = chooseFinalModel(input.plan);
+  const image = input.image ?? null;
+  const model = chooseFinalModel(input.plan, image !== null);
   const variants = input.kind === "draft" ? (["a", "b"] as const) : [null];
   return Promise.all(
     variants.map(async (variant) => {
@@ -169,26 +174,27 @@ export async function startLive(input: StartInput, deps: LiveDeps): Promise<stri
         next: parts[1] ?? null,
         startedAt: deps.now,
         owner: input.owner ?? null,
+        ...(image ? { source: "image" as const } : {}),
       };
-      const task = await submit(job, prompt, deps);
+      const task = await submit(job, prompt, deps, undefined, image?.base64);
       return encodeLiveJob({ ...job, task }, deps.env);
     }),
   );
 }
 
-function request(job: Omit<LiveJob, "task">, prompt: string): VideoRequest {
-  return { prompt, aspectRatio: job.aspect, durationSec: job.duration, quality: job.kind, sound: job.sound };
+function request(job: Omit<LiveJob, "task">, prompt: string, image?: string): VideoRequest {
+  return { prompt, aspectRatio: job.aspect, durationSec: job.duration, quality: job.kind, sound: job.sound, ...(image ? { image } : {}) };
 }
 
-function submit(job: Omit<LiveJob, "task">, prompt: string, deps: LiveDeps, extendFrom?: string) {
+function submit(job: Omit<LiveJob, "task">, prompt: string, deps: LiveDeps, extendFrom?: string, image?: string) {
   return job.model === "kling-3.0"
-    ? submitKling(klingConfig(deps.env), request(job, prompt), deps.fetch)
+    ? submitKling(klingConfig(deps.env), request(job, prompt, image), deps.fetch)
     : submitVeo(veoConfig(deps.env), request(job, prompt), deps.fetch, extendFrom);
 }
 
 function poll(job: LiveJob, deps: LiveDeps) {
   return job.model === "kling-3.0"
-    ? pollKling(klingConfig(deps.env), job.task, deps.fetch)
+    ? pollKling(klingConfig(deps.env), job.task, deps.fetch, job.source === "image" ? "image" : "text")
     : pollVeo(veoConfig(deps.env), job.task, deps.fetch);
 }
 

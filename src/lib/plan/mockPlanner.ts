@@ -10,6 +10,9 @@ const MOOD_STYLE: Record<Mood, string> = {
   auto: "photorealistic, natural light",
 };
 
+// 写真から作るときの「おまかせ」は、写真の見た目を変えない
+const IMAGE_AUTO_STYLE = "keep the look, colors and lighting of the input image";
+
 const BASE_NEGATIVE = ["subtitles", "captions", "watermark", "logo", "distorted hands", "extra limbs"];
 
 /** 一文の中の「」で囲まれたセリフを取り出す */
@@ -28,9 +31,10 @@ export function mockPlan(brief: Brief): Plan {
   const lines = extractLines(sentence);
   const hasDialogue = lines.length > 0;
   const vertical = brief.purpose === "sns_vertical";
+  const fromImage = brief.from_image === true;
 
   const characters: Character[] = hasDialogue
-    ? [{ id: "A", label_ja: "主人公", sheet: "the main character described in the sentence", voice: "natural, friendly voice" }]
+    ? [{ id: "A", label_ja: "主人公", sheet: fromImage ? "the person or character shown in the input image" : "the main character described in the sentence", voice: "natural, friendly voice" }]
     : [];
 
   const ranges = cuts(brief.duration_sec, hasDialogue);
@@ -47,8 +51,11 @@ export function mockPlan(brief: Brief): Plan {
       camera: i === 0 ? "slow push-in" : "static",
       characters: hasDialogue ? ["A"] : [],
       wardrobe: {},
-      action:
-        i === 0
+      action: fromImage
+        ? i === 0
+          ? `Animate the input image as the first frame, keeping its subject and composition. Motion described in this Japanese sentence: 「${sentence}」`
+          : `The motion continues toward its key moment: 「${sentence}」`
+        : i === 0
           ? `The scene described in this Japanese sentence: 「${sentence}」`
           : `The scene continues toward its key moment: 「${sentence}」`,
       dialogue,
@@ -61,15 +68,18 @@ export function mockPlan(brief: Brief): Plan {
     title_ja: Array.from(sentence).slice(0, 20).join(""),
     aspect_ratio: vertical ? "9:16" : "16:9",
     duration_sec: brief.duration_sec,
-    style: MOOD_STYLE[brief.mood],
-    setting: "The place and time described in the sentence.",
+    style: fromImage && brief.mood === "auto" ? IMAGE_AUTO_STYLE : MOOD_STYLE[brief.mood],
+    setting: fromImage ? "The place shown in the input image." : "The place and time described in the sentence.",
     characters,
     shots,
     music: null,
     on_screen_text: [],
-    negative: BASE_NEGATIVE,
+    negative: fromImage ? [...BASE_NEGATIVE, "changing the face or identity of the subject"] : BASE_NEGATIVE,
     elements_ja: [{ element: sentence, shot: 1 }],
-    assumptions_ja: ["練習モードのため、AIでの書き直しはせず決まった形で組み立てています"],
+    assumptions_ja: [
+      "練習モードのため、AIでの書き直しはせず決まった形で組み立てています",
+      ...(fromImage ? ["選んだ写真を最初のコマにして、写っている人や物・構図はそのまま動かします"] : []),
+    ],
     safety: { ok: true, notes_ja: "" },
   };
 }
