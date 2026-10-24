@@ -77,9 +77,15 @@ export default function DonePage() {
 
         <div className="relative w-[236px] self-center overflow-hidden rounded-[18px] bg-surface">
           {videoUrl && (
-            <video ref={videoRef} src={videoUrl} className="aspect-[9/16] w-full object-cover" controls playsInline autoPlay crossOrigin="anonymous">
+            // iPhone は自動再生と先読みをしないので、#t=0.1 で最初のコマを出し、再生はボタンで始める
+            <video ref={videoRef} src={`${videoUrl}#t=0.1`} className="aspect-[9/16] w-full object-cover" controls playsInline preload="metadata">
               {vttUrl && <track kind="subtitles" srcLang="ja" label="日本語" src={vttUrl} default={subOn} />}
             </video>
+          )}
+          {!videoUrl && (
+            <div className="flex aspect-[9/16] w-full items-center justify-center text-sm text-muted" aria-live="polite">
+              動画を読み込んでいます…
+            </div>
           )}
           <span className="absolute top-2.5 left-2.5 rounded-md bg-bg px-2 py-0.5 text-[11px] font-bold">AI生成</span>
           <span className="absolute top-2.5 right-2.5 rounded-md bg-bg px-2 py-0.5 text-[11px]">練習モード</span>
