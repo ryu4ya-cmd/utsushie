@@ -10,13 +10,18 @@ import type { Brief, FinalModel, Plan } from "@/lib/types";
 export class LoginRequiredError extends Error {}
 
 async function post<T>(url: string, body: unknown): Promise<T> {
+  const auth = await authHeaders();
   const res = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+    headers: { "Content-Type": "application/json", ...auth },
     body: JSON.stringify(body),
   });
   const data = await res.json().catch(() => ({}));
-  if (res.status === 401 && data.login) throw new LoginRequiredError(data.error);
+  if (res.status === 401 && data.login) {
+    // ログインしているのにサーバーが認めないときは、ログイン画面へ送り返すと行ったり来たりになるので、ここで止める
+    if (auth.Authorization) throw new Error("ログインを確かめられませんでした。右上の「アカウント」からログアウトして、もう一度ログインしてください。");
+    throw new LoginRequiredError(data.error);
+  }
   if (!res.ok) throw new Error(data.error ?? "通信に失敗しました。もう一度お試しください。");
   return data as T;
 }
