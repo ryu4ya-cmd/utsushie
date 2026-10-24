@@ -3,7 +3,7 @@
 // 画面からサーバーへの問い合わせ
 
 import type { PlanResult } from "@/lib/flow";
-import type { Brief, Duration, FinalModel } from "@/lib/types";
+import type { Brief, FinalModel, Plan } from "@/lib/types";
 
 async function post<T>(url: string, body: unknown): Promise<T> {
   const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -14,8 +14,13 @@ async function post<T>(url: string, body: unknown): Promise<T> {
 
 export const requestPlan = (brief: Brief) => post<PlanResult>("/api/plan", brief);
 
-export const startDrafts = (duration: Duration) =>
-  post<{ ids: string[] }>("/api/jobs", { kind: "draft", duration_sec: duration }).then((r) => r.ids);
+// 本番モードでは設計図から動画APIへの指示文を作るので、設計図も送る（練習モードでは使わない）
+export const startDrafts = (brief: Brief, plan: Plan) =>
+  post<{ ids: string[] }>("/api/jobs", { kind: "draft", duration_sec: brief.duration_sec, sound: brief.sound, plan }).then(
+    (r) => r.ids,
+  );
 
-export const startFinal = (duration: Duration, model: FinalModel) =>
-  post<{ ids: string[] }>("/api/jobs", { kind: "final", duration_sec: duration, model }).then((r) => r.ids[0]);
+export const startFinal = (brief: Brief, plan: Plan, model: FinalModel) =>
+  post<{ ids: string[] }>("/api/jobs", { kind: "final", duration_sec: brief.duration_sec, sound: brief.sound, plan, model }).then(
+    (r) => r.ids[0],
+  );

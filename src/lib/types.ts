@@ -76,4 +76,5 @@ export interface JobStatus {
   videoUrl: string | null;
   model: string;
   practice: boolean;
+  pollMs?: number; // 次に問い合わせるまでの間隔（なければ練習モードの 0.5 秒）
 }
