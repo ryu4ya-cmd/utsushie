@@ -16,6 +16,8 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const CODE = /^\d{6,10}$/;
 /** ログインのあとに戻る先。メールのリンクの戻り先に付けると Supabase の許可リストに合わないことがあるので、端末に残しておく */
 const NEXT_KEY = "utsushie.login.next";
+/** リンクが使えなかったときに入れ直さなくて済むよう、最後に送ったアドレスを端末に残す */
+const EMAIL_KEY = "utsushie.login.email";
 
 /** ログインのあとに戻る先。ほかのサイトへは飛ばさない */
 function safeNext(v: string | null): string | null {
@@ -46,9 +48,15 @@ function urlError(): string | null {
   if (typeof location === "undefined") return null;
   const p = new URLSearchParams(location.hash.slice(1) || location.search);
   const code = p.get("error_code");
+  // 前の方式で送ったメールのリンク（?code=…）は、いまの方式では使えない
+  if (new URLSearchParams(location.search).has("code")) {
+    return "前に届いたメールのリンクは使えなくなりました。下の「ログインのメールを送る」をもう一度押し、新しく届いたメールの「Sign in」を開いてください。";
+  }
   if (!code && !p.get("error_description")) return null;
-  if (code === "otp_expired") return "リンクの期限が切れたか、もう使われています。もう一度メールを送って、新しいリンクを開いてください。";
-  return `ログインできませんでした（${p.get("error_description") ?? code}）。もう一度お試しください。`;
+  if (code === "otp_expired") {
+    return "このリンクはもう使えません（期限切れ・使用済み、またはあとから別のメールを送ったため）。下の「ログインのメールを送る」をもう一度押し、届いた一番新しいメールの「Sign in」を開いてください。";
+  }
+  return `ログインできませんでした（${p.get("error_description") ?? code}）。下の「ログインのメールを送る」からもう一度お試しください。`;
 }
 
 function Login() {
@@ -67,6 +75,13 @@ function Login() {
     // 戻ってきたときのエラーと、メールを送る前に残した戻り先を読む（どちらもブラウザでしか読めない）
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setError(urlError());
+    // エラーの付いたアドレスを消しておく（再読み込みで同じエラーが出ないように）
+    if (/error|code=/.test(location.hash + location.search)) history.replaceState(history.state, "", location.pathname);
+    try {
+      setEmail(localStorage.getItem(EMAIL_KEY) ?? "");
+    } catch {
+      // 読めなければ入れ直してもらう
+    }
     setNext((n) => n ?? takeNext());
   }, []);
 
@@ -82,6 +97,11 @@ function Login() {
     setError(null);
     keepFlowForLogin();
     rememberNext(next);
+    try {
+      localStorage.setItem(EMAIL_KEY, email.trim());
+    } catch {
+      // 残せなくてもログインはできる
+    }
     const { error: e } = await sb.auth.signInWithOtp({ email: email.trim(), options: { emailRedirectTo: `${location.origin}/login` } });
     setBusy(false);
     if (e) setError(e.status === 429 ? "メールを送りすぎました。少し待ってからもう一度お試しください。" : `メールを送れませんでした（${e.message}）。`);
