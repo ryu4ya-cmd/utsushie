@@ -1,6 +1,7 @@
 "use client";
 
-// ログイン。メールに届くリンクを開くか、メールに書かれた数字のコードを入れるとログインできる（パスワードは使わない）。
+// ログイン。メールに届く「Sign in」のリンクを開くとログインできる（パスワードは使わない）。
+// メールの数字のコードは、文面を変えられる設定（独自のメール送信）にしたときだけ使う。
 // ログインしていれば、今日あと何回作れるかとログアウトを出す。
 
 import { useRouter, useSearchParams } from "next/navigation";
@@ -8,7 +9,7 @@ import { Suspense, useEffect, useState } from "react";
 import { BackHeader, CtaButton, ErrorBox, Screen } from "@/components/ui";
 import { keepFlowForLogin } from "@/lib/flow";
 import { KIND_LABEL } from "@/lib/quota";
-import { GOOGLE_LOGIN } from "@/lib/supabase/config";
+import { EMAIL_CODE_LOGIN, GOOGLE_LOGIN } from "@/lib/supabase/config";
 import { supabase, useServerCheck, useSession } from "@/lib/supabase/browser";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -46,7 +47,7 @@ function urlError(): string | null {
   const p = new URLSearchParams(location.hash.slice(1) || location.search);
   const code = p.get("error_code");
   if (!code && !p.get("error_description")) return null;
-  if (code === "otp_expired") return "リンクの期限が切れたか、もう使われています。もう一度メールを送って、届いた数字のコードを入れてください。";
+  if (code === "otp_expired") return "リンクの期限が切れたか、もう使われています。もう一度メールを送って、新しいリンクを開いてください。";
   return `ログインできませんでした（${p.get("error_description") ?? code}）。もう一度お試しください。`;
 }
 
@@ -156,27 +157,33 @@ function Login() {
         <div className="flex flex-col gap-2 rounded-[14px] bg-surface px-4 py-4">
           <span className="text-[17px] font-bold">メールを送りました</span>
           <p className="text-sm leading-relaxed text-ink/85">
-            {email.trim()} に届いたメールの数字のコードを、下に入れてください。メールのリンクを開いてもログインできます（開いたブラウザでログインします）。
+            {email.trim()} に Supabase Auth から英語のメール（件名「Your sign-in link」など）が届きます。メールの「Sign in」のリンクを開くと、ログインして続きに進めます。
           </p>
-          <p className="text-xs leading-relaxed text-muted">届かないときは迷惑メールのフォルダも見てください。</p>
+          <p className="text-xs leading-relaxed text-muted">
+            リンクを開いたブラウザ（Safari や Chrome）でログインします。ホーム画面のアイコンから使っているときは、そのブラウザで続けてください。届かないときは迷惑メールのフォルダも見てください。
+          </p>
         </div>
         {error && <ErrorBox message={error} />}
-        <div className="flex flex-col gap-2">
-          <label htmlFor="code" className="text-sm font-bold">メールの数字のコード</label>
-          <input
-            id="code"
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            placeholder="123456"
-            value={code}
-            onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-            onKeyDown={(e) => e.key === "Enter" && verifyCode()}
-            className="h-12 w-full rounded-2xl border-[1.5px] border-line bg-surface px-4 text-center text-xl tracking-[0.3em] placeholder:text-muted focus:border-accent focus:outline-none"
-          />
-        </div>
-        <CtaButton disabled={busy || !CODE.test(code)} onClick={verifyCode}>
-          {busy ? "確かめています…" : "ログインする"}
-        </CtaButton>
+        {EMAIL_CODE_LOGIN && (
+          <>
+            <div className="flex flex-col gap-2">
+              <label htmlFor="code" className="text-sm font-bold">メールの数字のコード</label>
+              <input
+                id="code"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                placeholder="123456"
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+                onKeyDown={(e) => e.key === "Enter" && verifyCode()}
+                className="h-12 w-full rounded-2xl border-[1.5px] border-line bg-surface px-4 text-center text-xl tracking-[0.3em] placeholder:text-muted focus:border-accent focus:outline-none"
+              />
+            </div>
+            <CtaButton disabled={busy || !CODE.test(code)} onClick={verifyCode}>
+              {busy ? "確かめています…" : "ログインする"}
+            </CtaButton>
+          </>
+        )}
         <button
           type="button"
           onClick={() => {
@@ -193,7 +200,7 @@ function Login() {
 
   return (
     <>
-      <p className="text-[15px] leading-relaxed text-muted">動画を作るにはログインが必要です。メールに届くコードを入れるだけで、パスワードは要りません。</p>
+      <p className="text-[15px] leading-relaxed text-muted">動画を作るにはログインが必要です。メールに届くリンクを開くだけで、パスワードは要りません。</p>
       {error && <ErrorBox message={error} />}
       <div className="flex flex-col gap-2">
         <label htmlFor="email" className="text-sm font-bold">メールアドレス</label>

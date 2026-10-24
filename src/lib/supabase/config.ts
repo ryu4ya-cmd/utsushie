@@ -37,5 +37,11 @@ export function supabaseServer(env: Env): SupabaseServer | null {
 
 export class SupabaseConfigError extends Error {}
 
+/**
+ * メールの数字のコードでのログインを出すか。Supabase の標準のメール送信ではメールの文面を変えられず、
+ * コードが載らないので、独自のメール送信（SMTP）をつないで文面に {{ .Token }} を足したときだけ 1 にする。
+ */
+export const EMAIL_CODE_LOGIN = process.env.NEXT_PUBLIC_UTSUSHIE_EMAIL_CODE === "1";
+
 /** Google でのログインを出すか（Supabase 側で Google を有効にしたときだけ 1 にする） */
 export const GOOGLE_LOGIN = process.env.NEXT_PUBLIC_UTSUSHIE_GOOGLE_LOGIN === "1";
