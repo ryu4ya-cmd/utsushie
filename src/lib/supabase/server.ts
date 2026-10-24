@@ -11,7 +11,7 @@ export const VIDEO_BUCKET = "videos";
 export class SupabaseError extends Error {}
 
 /** シークレットキーで呼ぶときの見出し。新しい形式（sb_secret_…）は apikey だけで送る */
-export function serverHeaders(cfg: SupabaseServer): Record<string, string> {
+function serverHeaders(cfg: SupabaseServer): Record<string, string> {
   return cfg.secretKey.startsWith("sb_")
     ? { apikey: cfg.secretKey }
     : { apikey: cfg.secretKey, Authorization: `Bearer ${cfg.secretKey}` };
