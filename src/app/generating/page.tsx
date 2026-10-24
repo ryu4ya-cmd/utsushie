@@ -5,7 +5,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { CtaLink, ErrorBox, Screen, StepBar, WaitForFlow } from "@/components/ui";
+import { CtaAnchor, ErrorBox, Screen, StepBar, WaitForFlow } from "@/components/ui";
 import { useFlow } from "@/lib/flow";
 import { MODEL_LABEL } from "@/lib/models";
 import { useJobs } from "@/lib/useJobs";
@@ -73,7 +73,7 @@ export default function GeneratingPage() {
 
         <div className="flex-1" />
         {done ? (
-          <CtaLink href="/done">完成した動画を見る</CtaLink>
+          <CtaAnchor href="/done">完成した動画を見る</CtaAnchor>
         ) : (
           <div className="flex flex-col items-center gap-1.5 pb-2 text-center">
             <span className="text-[15px] font-bold">あと約{job?.remainingSec ?? "…"}秒</span>

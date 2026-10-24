@@ -69,6 +69,15 @@ export function CtaLink({ href, children }: { href: string; children: React.Reac
   );
 }
 
+/** Next のクライアント遷移を使わず、ページを読み込み直して移る。iPhone のホーム画面アプリでも確実に進めるため */
+export function CtaAnchor({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <a href={href} className={ctaClass}>
+      {children}
+    </a>
+  );
+}
+
 export function CtaButton(props: React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return <button type="button" {...props} className={ctaClass} />;
 }
