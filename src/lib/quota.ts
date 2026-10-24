@@ -15,7 +15,7 @@ export const DEFAULT_LIMITS: Limits = {
   total: { draft: 30, final: 10 },
 };
 
-function int(v: string | undefined, fallback: number): number {
+export function int(v: string | undefined, fallback: number): number {
   const n = Number(v);
   return v !== undefined && v.trim() !== "" && Number.isInteger(n) && n >= 0 ? n : fallback;
 }

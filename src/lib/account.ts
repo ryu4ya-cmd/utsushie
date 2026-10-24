@@ -1,17 +1,24 @@
 // サーバーで「誰が頼んだか」を確かめる。Supabase を設定していなければ誰でも（ログインなしで）使える。
+// オーナー用リンクを開いた端末（owner）は、ログインしていなくても使える（くわしくは lib/owner.ts）。
 
+import { isOwnerRequest } from "@/lib/owner";
 import { supabaseServer, SupabaseConfigError, type Env, type SupabaseServer } from "@/lib/supabase/config";
 import { bearer, SupabaseError, userIdFromToken } from "@/lib/supabase/server";
 import type { FetchLike } from "@/lib/video/types";
 
 export type Caller =
-  | { configured: false; supabase: null; user: null }
-  | { configured: true; supabase: SupabaseServer; user: string | null };
+  | { configured: false; supabase: null; user: null; owner: false }
+  | { configured: true; supabase: SupabaseServer; user: string | null; owner: boolean };
 
 export async function caller(request: Request, env: Env, fetcher: FetchLike): Promise<Caller> {
   const supabase = supabaseServer(env);
-  if (!supabase) return { configured: false, supabase: null, user: null };
-  return { configured: true, supabase, user: await userIdFromToken(supabase, bearer(request), fetcher) };
+  if (!supabase) return { configured: false, supabase: null, user: null, owner: false };
+  if (isOwnerRequest(request, env)) {
+    // オーナーの回数は、UTSUSHIE_OWNER_USER_ID（Supabase のユーザーID）があればその人として数える
+    const ownerUser = env.UTSUSHIE_OWNER_USER_ID?.trim() || null;
+    return { configured: true, supabase, user: ownerUser ?? (await userIdFromToken(supabase, bearer(request), fetcher)), owner: true };
+  }
+  return { configured: true, supabase, user: await userIdFromToken(supabase, bearer(request), fetcher), owner: false };
 }
 
 export const LOGIN_REQUIRED = { error: "ログインすると作れます。", login: true };

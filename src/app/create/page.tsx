@@ -41,9 +41,9 @@ export default function CreatePage() {
   const examples = photo ? IMAGE_EXAMPLES : EXAMPLES;
   // ログインの設定があるときは、ログインしてから作る
   const auth = useSession();
-  const usage = useUsage(auth.session);
-  const needLogin = auth.enabled && auth.loaded && !auth.session;
-  const left = usage ? Math.max(0, usage.limits.draft - usage.used.draft) : null;
+  const usage = useUsage(auth.session, auth.owner);
+  const needLogin = auth.enabled && auth.loaded && !auth.session && !auth.owner;
+  const left = usage && usage.limits.draft !== null ? Math.max(0, usage.limits.draft - usage.used.draft) : null;
 
   return (
     <WaitForFlow loaded={loaded}>

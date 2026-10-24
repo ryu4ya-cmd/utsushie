@@ -2,6 +2,7 @@
 
 // 画面の側のログイン。Supabase の公開キーだけを使い、ログインの状態はこの端末のブラウザに残す。
 // サーバーへ頼むときは、ログインした人のトークンを Authorization に付ける。
+// オーナー用リンクを開いた端末は、ログインしていなくても使える（クッキーは画面から読めないので、サーバーに聞く）。
 //
 // メールのリンクは、ページを開いたのと別のブラウザで開くことがある（iPhone のホーム画面アプリ、Gmail アプリの中など）。
 // PKCE 方式だと最初のブラウザにしかない合言葉が要って、別のブラウザでは必ず失敗するので、リンクだけでログインが済む方式（implicit）にする。
@@ -34,21 +35,35 @@ export async function authHeaders(): Promise<Record<string, string>> {
   return data.session ? { Authorization: `Bearer ${data.session.access_token}` } : {};
 }
 
+let ownerStatus: Promise<boolean> | undefined;
+
+/** この端末がオーナーとして覚えられているか。ページを開いている間は1回だけ聞く */
+function fetchOwner(): Promise<boolean> {
+  ownerStatus ??= fetch("/api/usage", { cache: "no-store" })
+    .then((r) => r.json())
+    .then((d) => d?.owner === true)
+    .catch(() => false);
+  return ownerStatus;
+}
+
 export interface SessionState {
   enabled: boolean; // ログインの設定があるか
   loaded: boolean;
   session: Session | null;
+  owner: boolean; // オーナーの端末か（ログインなしで使える）
 }
 
 export function useSession(): SessionState {
-  const [state, setState] = useState<SessionState>({ enabled: loginEnabled(), loaded: !loginEnabled(), session: null });
+  const [state, setState] = useState<SessionState>({ enabled: loginEnabled(), loaded: !loginEnabled(), session: null, owner: false });
   useEffect(() => {
     const sb = supabase();
     if (!sb) return;
     let alive = true;
-    sb.auth.getSession().then(({ data }) => alive && setState({ enabled: true, loaded: true, session: data.session }));
+    const set = (session: Session | null) =>
+      fetchOwner().then((owner) => alive && setState({ enabled: true, loaded: true, session, owner }));
+    sb.auth.getSession().then(({ data }) => set(data.session));
     const { data } = sb.auth.onAuthStateChange((_event, session) => {
-      if (alive) setState({ enabled: true, loaded: true, session });
+      set(session);
     });
     return () => {
       alive = false;
@@ -60,7 +75,8 @@ export function useSession(): SessionState {
 
 export interface Usage {
   used: { draft: number; final: number };
-  limits: { draft: number; final: number };
+  limits: { draft: number | null; final: number | null }; // null は上限なし（オーナー）
+  owner: boolean;
 }
 
 /**
@@ -69,20 +85,21 @@ export interface Usage {
  */
 export type ServerCheck = { state: "checking" } | { state: "ok"; usage: Usage } | { state: "rejected" } | { state: "error"; message: string };
 
-export function useServerCheck(session: Session | null): ServerCheck | null {
-  const token = session?.access_token;
+export function useServerCheck(session: Session | null, owner = false): ServerCheck | null {
+  const token = session?.access_token ?? (owner ? "owner" : undefined);
   const [result, setResult] = useState<{ token: string; check: ServerCheck } | null>(null);
   useEffect(() => {
     if (!token) return;
     let alive = true;
-    fetch("/api/usage", { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" })
+    const headers: Record<string, string> = token === "owner" ? {} : { Authorization: `Bearer ${token}` };
+    fetch("/api/usage", { headers, cache: "no-store" })
       .then(async (r) => {
         const d = await r.json().catch(() => null);
         if (!r.ok) throw new Error(d?.error ?? `HTTP ${r.status}`);
         return d;
       })
       .then((d) => {
-        const check: ServerCheck = d?.signedIn ? { state: "ok", usage: { used: d.used, limits: d.limits } } : { state: "rejected" };
+        const check: ServerCheck = d?.signedIn ? { state: "ok", usage: { used: d.used, limits: d.limits, owner: d.owner === true } } : { state: "rejected" };
         if (alive) setResult({ token, check });
       })
       .catch((e) => alive && setResult({ token, check: { state: "error", message: e instanceof Error ? e.message : "通信に失敗しました" } }));
@@ -94,8 +111,8 @@ export function useServerCheck(session: Session | null): ServerCheck | null {
   return result?.token === token ? result.check : { state: "checking" };
 }
 
-/** 今日の使用回数。ログインしていない・設定がない・サーバーが認めないときは null */
-export function useUsage(session: Session | null): Usage | null {
-  const check = useServerCheck(session);
+/** 今日の使用回数。ログインしていない（オーナーでもない）・設定がない・サーバーが認めないときは null */
+export function useUsage(session: Session | null, owner = false): Usage | null {
+  const check = useServerCheck(session, owner);
   return check?.state === "ok" ? check.usage : null;
 }

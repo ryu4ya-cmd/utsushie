@@ -1,6 +1,8 @@
 // ログインと回数制限のテスト。Supabase も動画APIも偽の fetch に差し替え、外には一切つながない。
 
+import { createHash } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { isOwnerKey } from "@/lib/owner";
 import { mockPlan } from "@/lib/plan/mockPlanner";
 import { limitMessage, limits } from "@/lib/quota";
 import type { Brief } from "@/lib/types";
@@ -60,12 +62,12 @@ function setEnv(env: Record<string, string>) {
   for (const [k, v] of Object.entries(env)) vi.stubEnv(k, v);
 }
 
-const startJob = async (body: Record<string, unknown>, token: string | null = "user-token") => {
+const startJob = async (body: Record<string, unknown>, token: string | null = "user-token", cookie: string | null = null) => {
   const { POST } = await import("@/app/api/jobs/route");
   return POST(
     new Request("http://x/api/jobs", {
       method: "POST",
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(cookie ? { Cookie: cookie } : {}) },
       body: JSON.stringify(body),
     }),
   );
@@ -183,5 +185,87 @@ describe("本番モード", () => {
     expect(decodeLiveJob(ids[0], process.env)?.owner).toBe(USER);
     const order = calls.map((c) => (c.url.includes("klingai") ? "kling" : c.url.replace(SB_URL, "")));
     expect(order).toEqual(["/auth/v1/user", "/rest/v1/rpc/use_generation", "kling"]);
+  });
+});
+
+// オーナー用の合言葉はテスト用のものに差し替える（本物の合言葉はコードにない）
+const OWNER_KEY = "test-owner-key";
+const OWNER_ENV = { UTSUSHIE_OWNER_KEY_SHA256: createHash("sha256").update(OWNER_KEY).digest("hex") };
+const OWNER_COOKIE = `theme=dark; utsushie_owner=${OWNER_KEY}`;
+const OWNER_USER = "9f8e7d6c-1111-2222-3333-444455556666";
+
+describe("オーナー", () => {
+  it("オーナー用リンクを開くと、長く残るクッキーを置いてログインの画面へ戻す", async () => {
+    setEnv(OWNER_ENV);
+    const { GET } = await import("@/app/api/owner/route");
+    const res = await GET(new Request(`http://x/api/owner?key=${OWNER_KEY}`));
+    expect(res.status).toBe(303);
+    expect(res.headers.get("location")).toBe("/login?owner=on");
+    const cookie = res.headers.get("set-cookie")!;
+    expect(cookie).toContain(`utsushie_owner=${OWNER_KEY}`);
+    expect(cookie).toMatch(/HttpOnly/);
+    expect(cookie).toMatch(/Max-Age=34560000/);
+  });
+
+  it("合言葉が違えばクッキーを置かない。off で外せる", async () => {
+    setEnv(OWNER_ENV);
+    const { GET } = await import("@/app/api/owner/route");
+    const bad = await GET(new Request("http://x/api/owner?key=guess"));
+    expect(bad.headers.get("location")).toBe("/login?owner=bad");
+    expect(bad.headers.get("set-cookie")).toBeNull();
+    const off = await GET(new Request("http://x/api/owner?off=1"));
+    expect(off.headers.get("set-cookie")).toMatch(/utsushie_owner=; .*Max-Age=0/);
+  });
+
+  it("練習モードでは、ログインなしで何回でも作れる（回数を数えない）", async () => {
+    setEnv({ ...SUPABASE_ENV, ...OWNER_ENV });
+    const calls = stubFetch({ used: -1 });
+    const res = await startJob({ kind: "draft", duration_sec: 10 }, null, OWNER_COOKIE);
+    expect(res.status).toBe(200);
+    expect(calls).toHaveLength(0);
+  });
+
+  it("クッキーの合言葉が違えば、ほかの人と同じくログインが要る", async () => {
+    setEnv({ ...SUPABASE_ENV, ...OWNER_ENV });
+    stubFetch();
+    const res = await startJob({ kind: "draft", duration_sec: 10 }, null, "utsushie_owner=guess");
+    expect(res.status).toBe(401);
+  });
+
+  it("上限を設定すれば、オーナーのユーザーIDで数える", async () => {
+    setEnv({ ...SUPABASE_ENV, ...OWNER_ENV, UTSUSHIE_OWNER_DAILY_DRAFTS: "20", UTSUSHIE_OWNER_USER_ID: OWNER_USER });
+    const calls = stubFetch({ used: 1 });
+    expect((await startJob({ kind: "draft", duration_sec: 10 }, null, OWNER_COOKIE)).status).toBe(200);
+    expect(calls.map((c) => c.body)).toEqual([{ p_user: OWNER_USER, p_kind: "draft", p_limit: 20, p_total: 30 }]);
+  });
+
+  it("本番モードでは既定でほかの人と同じ上限。ユーザーIDがなければ動画APIを呼ばずに止める", async () => {
+    setEnv({ ...LIVE_ENV, ...SUPABASE_ENV, ...OWNER_ENV });
+    const calls = stubFetch();
+    expect((await startJob({ kind: "final", duration_sec: 10, plan: PLAN }, null, OWNER_COOKIE)).status).toBe(500);
+    expect(calls).toHaveLength(0);
+
+    vi.stubEnv("UTSUSHIE_OWNER_USER_ID", OWNER_USER);
+    const calls2 = stubFetch({ used: 1 });
+    const res = await startJob({ kind: "final", duration_sec: 10, plan: PLAN }, null, OWNER_COOKIE);
+    expect(decodeLiveJob((await res.json()).ids[0], process.env)?.owner).toBe(OWNER_USER);
+    expect(calls2.find((c) => c.url.endsWith("/rpc/use_generation"))?.body).toMatchObject({ p_user: OWNER_USER, p_limit: 1 });
+  });
+
+  it("今日の回数の問い合わせに、オーナーであることと上限なしを返す", async () => {
+    setEnv({ ...SUPABASE_ENV, ...OWNER_ENV });
+    const calls = stubFetch();
+    const { GET } = await import("@/app/api/usage/route");
+    const res = await GET(new Request("http://x/api/usage", { headers: { Cookie: OWNER_COOKIE } }));
+    expect(await res.json()).toEqual({
+      configured: true, signedIn: true, owner: true, used: { draft: 0, final: 0 }, limits: { draft: null, final: null },
+    });
+    expect(calls).toHaveLength(0);
+  });
+
+  it("コードの合言葉を off にすれば、オーナー用リンクは使えない", () => {
+    expect(isOwnerKey(OWNER_KEY, { UTSUSHIE_OWNER_KEY_SHA256: "off" })).toBe(false);
+    expect(isOwnerKey(OWNER_KEY, OWNER_ENV)).toBe(true);
+    expect(isOwnerKey("", OWNER_ENV)).toBe(false);
   });
 });
