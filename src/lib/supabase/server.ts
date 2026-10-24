@@ -29,7 +29,12 @@ export async function userIdFromToken(cfg: SupabaseServer, token: string | null,
   const res = await fetcher(`${cfg.url}/auth/v1/user`, {
     headers: { apikey: cfg.publishableKey, Authorization: `Bearer ${token}` },
   });
-  if (res.status === 401 || res.status === 403) return null;
+  if (res.status === 401 || res.status === 403) {
+    // 期限切れのほか、URL やキーの取り違えでも起きる。Vercel のログで見分けられるようにしておく
+    const body = (await res.json().catch(() => null)) as { msg?: string; message?: string; error_code?: string } | null;
+    console.error(`ログインのトークンを認めませんでした（HTTP ${res.status}: ${body?.error_code ?? ""} ${body?.msg ?? body?.message ?? ""}）`);
+    return null;
+  }
   if (!res.ok) throw new SupabaseError(`ログインの確認に失敗しました（HTTP ${res.status}）`);
   const data = (await res.json().catch(() => null)) as { id?: unknown } | null;
   return typeof data?.id === "string" ? data.id : null;
