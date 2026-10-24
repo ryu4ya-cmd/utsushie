@@ -59,7 +59,15 @@ export default function CreatePage() {
             maxLength={MAX_SENTENCE}
             placeholder="例：夕焼けの海辺で猫が驚いてジャンプする"
             value={b.sentence_ja}
-            onChange={(e) => setBrief({ sentence_ja: e.target.value })}
+            enterKeyHint="done"
+            onChange={(e) => setBrief({ sentence_ja: e.target.value.replace(/\s*\n\s*/g, " ") })}
+            // 一文なので改行は入れない。スマホのキーボードの「完了」でキーボードを閉じる
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+                e.preventDefault();
+                e.currentTarget.blur();
+              }
+            }}
             className="w-full resize-none rounded-2xl border-[1.5px] border-line bg-surface px-4 py-3.5 text-base leading-relaxed placeholder:text-muted focus:border-accent focus:outline-none"
           />
           <span className="self-end text-xs text-muted">
@@ -119,8 +127,14 @@ export default function CreatePage() {
 
         <div className="flex-1" />
         <div className="flex flex-col gap-2">
-          <span className="text-center text-xs text-muted">
-            {left !== null ? `今日はあと${left}回、下書きを作れます（1回で2本）` : "練習モードでは、サンプル動画が返ってきます"}
+          <span className="text-center text-xs text-muted" aria-live="polite">
+            {!b.sentence_ja.trim()
+              ? "上に一文を書くか、例をタップすると作れます"
+              : left === 0
+                ? "今日の分は使い切りました。日本時間の0時にまた作れます"
+                : left !== null
+                  ? `今日はあと${left}回、下書きを作れます（1回で2本）`
+                  : "練習モードでは、サンプル動画が返ってきます"}
           </span>
           <CtaButton
             disabled={!canGo || !auth.loaded || left === 0}
