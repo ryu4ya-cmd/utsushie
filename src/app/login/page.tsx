@@ -3,6 +3,7 @@
 // ログイン。メールに届く「Sign in」のリンクを開くとログインできる（パスワードは使わない）。
 // メールの数字のコードは、文面を変えられる設定（独自のメール送信）にしたときだけ使う。
 // ログインしていれば、今日あと何回作れるかとログアウトを出す。
+// オーナー用リンクを開いた端末は、ログインしなくても同じ画面（オーナー）になる。
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
@@ -62,8 +63,10 @@ function urlError(): string | null {
 function Login() {
   const router = useRouter();
   const params = useSearchParams();
-  const { enabled, loaded, session } = useSession();
-  const check = useServerCheck(session);
+  const { enabled, loaded, session, owner } = useSession();
+  const check = useServerCheck(session, owner);
+  // オーナー用リンクから戻ってきたとき（on … 覚えた / bad … 合言葉が違う / off … 外した）
+  const ownerLink = params.get("owner");
   const [next, setNext] = useState<string | null>(() => safeNext(params.get("next")));
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -135,14 +138,23 @@ function Login() {
   }
   if (!loaded) return null;
 
-  if (session) {
+  if (session || owner) {
     const usage = check?.state === "ok" ? check.usage : null;
     return (
       <>
-        <div className="flex flex-col gap-1 rounded-[14px] bg-surface px-4 py-3.5">
-          <span className="text-xs text-muted">ログイン中</span>
-          <span className="text-[15px] font-bold break-all">{session.user.email ?? "ログインしています"}</span>
-        </div>
+        {owner && (
+          <div className="flex flex-col gap-1 rounded-[14px] bg-surface px-4 py-3.5">
+            <span className="text-xs text-muted">オーナー</span>
+            <span className="text-[15px] font-bold">この端末はオーナーとして使えます</span>
+            <span className="text-xs leading-relaxed text-muted">ログインは要りません。別の端末やブラウザでは、オーナー用リンクをもう一度開いてください。</span>
+          </div>
+        )}
+        {session && (
+          <div className="flex flex-col gap-1 rounded-[14px] bg-surface px-4 py-3.5">
+            <span className="text-xs text-muted">ログイン中</span>
+            <span className="text-[15px] font-bold break-all">{session.user.email ?? "ログインしています"}</span>
+          </div>
+        )}
         {check?.state === "rejected" && (
           <ErrorBox message="この画面ではログインしていますが、サーバーで確かめられませんでした。ログアウトして、もう一度ログインしてください。続くときは管理者に連絡してください。" />
         )}
@@ -150,27 +162,42 @@ function Login() {
         {usage && (
           <div className="flex flex-col gap-2 rounded-[14px] bg-surface px-4 py-3.5">
             <span className="text-sm font-bold">今日あと何回作れるか</span>
-            {(["draft", "final"] as const).map((k) => (
-              <div key={k} className="flex items-center justify-between text-sm">
-                <span>{KIND_LABEL[k]}</span>
-                <span>
-                  あと{Math.max(0, usage.limits[k] - usage.used[k])}回
-                  <span className="text-muted">（1日{usage.limits[k]}回）</span>
-                </span>
-              </div>
-            ))}
+            {(["draft", "final"] as const).map((k) => {
+              const limit = usage.limits[k];
+              return (
+                <div key={k} className="flex items-center justify-between text-sm">
+                  <span>{KIND_LABEL[k]}</span>
+                  {limit === null ? (
+                    <span>上限なし</span>
+                  ) : (
+                    <span>
+                      あと{Math.max(0, limit - usage.used[k])}回
+                      <span className="text-muted">（1日{limit}回）</span>
+                    </span>
+                  )}
+                </div>
+              );
+            })}
             <span className="text-xs text-muted">日本時間の0時に戻ります。下書きは1回で2本です。</span>
           </div>
         )}
         <div className="flex-1" />
         {usage && <CtaButton onClick={() => router.replace(next ?? "/create")}>{next ? "続ける" : "動画を作る"}</CtaButton>}
-        <button
-          type="button"
-          onClick={() => supabase()?.auth.signOut()}
-          className="min-h-11 text-sm text-accent hover:text-accent-hover"
-        >
-          ログアウト
-        </button>
+        {session && (
+          <button
+            type="button"
+            onClick={() => supabase()?.auth.signOut()}
+            className="min-h-11 text-sm text-accent hover:text-accent-hover"
+          >
+            ログアウト
+          </button>
+        )}
+        {owner && (
+          // クッキーを消すのはサーバーなので、ページごと移る
+          <a href="/api/owner?off=1" className="flex min-h-11 items-center justify-center text-sm text-muted hover:text-accent">
+            この端末のオーナーの設定を外す
+          </a>
+        )}
       </>
     );
   }
@@ -225,6 +252,9 @@ function Login() {
   return (
     <>
       <p className="text-[15px] leading-relaxed text-muted">動画を作るにはログインが必要です。メールに届くリンクを開くだけで、パスワードは要りません。</p>
+      {ownerLink === "bad" && <ErrorBox message="オーナー用リンクが正しくありません。リンクを最後まで正しくコピーしたか確かめてください。" />}
+      {ownerLink === "on" && <ErrorBox message="オーナー用リンクは正しいのですが、この端末に覚えられませんでした。ブラウザでクッキー（サイトのデータ）を許可してから、もう一度開いてください。" />}
+      {ownerLink === "off" && <p className="text-sm text-muted">この端末のオーナーの設定を外しました。</p>}
       {error && <ErrorBox message={error} />}
       <div className="flex flex-col gap-2">
         <label htmlFor="email" className="text-sm font-bold">メールアドレス</label>

@@ -47,13 +47,13 @@ export function PracticeBadge() {
   );
 }
 
-/** ログインの設定があるときだけ出す。ログインしていれば「アカウント」 */
+/** ログインの設定があるときだけ出す。ログインしていれば（オーナーの端末でも）「アカウント」 */
 function AccountLink() {
-  const { enabled, loaded, session } = useSession();
+  const { enabled, loaded, session, owner } = useSession();
   if (!enabled || !loaded) return null;
   return (
     <Link href="/login" className="flex h-11 items-center px-2.5 text-sm text-ink hover:text-accent">
-      {session ? "アカウント" : "ログイン"}
+      {session || owner ? "アカウント" : "ログイン"}
     </Link>
   );
 }
