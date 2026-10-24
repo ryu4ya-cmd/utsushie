@@ -5,6 +5,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useSession } from "@/lib/supabase/browser";
 
 export function Screen({ children }: { children: React.ReactNode }) {
   return (
@@ -26,6 +27,17 @@ export function PracticeBadge() {
   );
 }
 
+/** ログインの設定があるときだけ出す。ログインしていれば「アカウント」 */
+function AccountLink() {
+  const { enabled, loaded, session } = useSession();
+  if (!enabled || !loaded) return null;
+  return (
+    <Link href="/login" className="flex h-11 items-center px-2.5 text-sm text-ink hover:text-accent">
+      {session ? "アカウント" : "ログイン"}
+    </Link>
+  );
+}
+
 export function BrandHeader() {
   return (
     <header className="flex h-11 items-center justify-between">
@@ -37,6 +49,7 @@ export function BrandHeader() {
         <Link href="/history" className="flex h-11 items-center px-2.5 text-sm text-ink hover:text-accent">
           履歴
         </Link>
+        <AccountLink />
         <PracticeBadge />
       </div>
     </header>

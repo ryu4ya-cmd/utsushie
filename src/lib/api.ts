@@ -3,11 +3,20 @@
 // 画面からサーバーへの問い合わせ
 
 import type { PlanResult } from "@/lib/flow";
+import { authHeaders } from "@/lib/supabase/browser";
 import type { Brief, FinalModel, Plan } from "@/lib/types";
 
+/** ログインが必要なときのエラー。画面はログインの画面へ案内する */
+export class LoginRequiredError extends Error {}
+
 async function post<T>(url: string, body: unknown): Promise<T> {
-  const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+    body: JSON.stringify(body),
+  });
   const data = await res.json().catch(() => ({}));
+  if (res.status === 401 && data.login) throw new LoginRequiredError(data.error);
   if (!res.ok) throw new Error(data.error ?? "通信に失敗しました。もう一度お試しください。");
   return data as T;
 }

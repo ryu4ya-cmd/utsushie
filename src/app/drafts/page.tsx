@@ -5,7 +5,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { BackHeader, CtaButton, ErrorBox, Screen, Spinner, StepBar, WaitForFlow } from "@/components/ui";
-import { requestPlan, startDrafts, startFinal } from "@/lib/api";
+import { LoginRequiredError, requestPlan, startDrafts, startFinal } from "@/lib/api";
 import { useFlow } from "@/lib/flow";
 import { MODEL_LABEL } from "@/lib/models";
 import { useJobs } from "@/lib/useJobs";
@@ -35,6 +35,7 @@ export default function DraftsPage() {
         if (!planned) update({ planned: p });
         update({ draftIds: await startDrafts(brief, p.plan) });
       } catch (e) {
+        if (e instanceof LoginRequiredError) return router.replace("/login?next=/drafts");
         setError(e instanceof Error ? e.message : "うまくいきませんでした");
       } finally {
         busy.current = false;
@@ -55,6 +56,7 @@ export default function DraftsPage() {
       update({ finalId });
       router.push("/generating");
     } catch (e) {
+      if (e instanceof LoginRequiredError) return router.push("/login?next=/drafts");
       setError(e instanceof Error ? e.message : "うまくいきませんでした");
       setStarting(false);
     }

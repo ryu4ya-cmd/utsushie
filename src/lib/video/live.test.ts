@@ -187,8 +187,8 @@ describe("Veo 3.1（セリフなし）", () => {
 
     // 1本目の動画は途中のものなので渡さない（共有ページでも出さない）
     expect((await liveVideo(id1, null, deps(fn))).status).toBe(409);
-    expect(liveVideoUrl(id1, ENV)).toBeNull();
-    expect(liveVideoUrl(handed!.id, ENV)).toBe(`/api/jobs/${handed!.id}/video`);
+    expect(await liveVideoUrl(id1, deps(fn))).toBeNull();
+    expect(await liveVideoUrl(handed!.id, deps(fn))).toBe(`/api/jobs/${handed!.id}/video`);
 
     state.op2 = true;
     const final = await liveStatus(handed!.id, deps(fn, T0 + 200_000));
@@ -232,6 +232,90 @@ describe("Veo 3.1（セリフなし）", () => {
     const [id] = await startLive({ kind: "final", duration: 10, plan: plan("夕焼けの海辺で猫が驚いてジャンプする"), sound: true }, deps(fn));
     await expect(liveStatus(id, deps(fn))).rejects.toThrow();
     expect(calls.some((c) => c.url.startsWith("https://evil.example"))).toBe(false);
+  });
+});
+
+describe("完成動画を保存場所（Supabase Storage）に移す", () => {
+  const SB = { url: "https://proj.supabase.co", publishableKey: "sb_publishable_x", secretKey: "sb_secret_y" };
+  const OWNER = "1b4e28ba-2fa1-11d2-883f-0016d3cca427";
+  const KLING_URL = "https://cdn.example/v.mp4";
+  const finalJob = (owner: string | null = OWNER) =>
+    encodeLiveJob(
+      { kind: "final", variant: null, duration: 10, model: "kling-3.0", aspect: "9:16", sound: true, task: "task-9", step: 1, steps: 1, next: null, startedAt: T0, owner },
+      ENV,
+    );
+  const storeDeps = (fetch: FetchLike): LiveDeps => ({ env: ENV, fetch, now: T0, storage: SB });
+
+  /** Kling は完成済み。保存場所は stored のときだけ動画がある */
+  function world(opts: { stored?: boolean; uploadStatus?: number } = {}) {
+    let stored = opts.stored ?? false;
+    const f = fakeFetch((c) => {
+      if (c.url.startsWith(`${SB.url}/storage/v1/object/public/videos/`)) return new Response(null, { status: stored ? 200 : 400 });
+      if (c.url.startsWith(`${SB.url}/storage/v1/object/videos/`)) {
+        const status = opts.uploadStatus ?? 200;
+        if (status === 200) stored = true;
+        return json(status === 200 ? { Key: "videos/x" } : { statusCode: String(status), message: "ng" }, status === 200 ? 200 : 400);
+      }
+      if (c.url === KLING_URL) return new Response("mp4-bytes", { status: 200 });
+      return json({ code: 0, data: { task_status: "succeed", task_result: { videos: [{ url: KLING_URL }] } } });
+    });
+    return f;
+  }
+
+  it("できあがったら保存場所に移し、保存場所のアドレスを返す", async () => {
+    const id = finalJob();
+    const { fn, calls } = world();
+    const st = await liveStatus(id, storeDeps(fn));
+    const path = st!.videoUrl!.replace(`${SB.url}/storage/v1/object/public/videos/`, "");
+    expect(path).toMatch(new RegExp(`^${OWNER}/[\\w-]{32}\\.mp4$`));
+    const upload = calls.find((c) => c.method === "POST")!;
+    expect(upload.url).toBe(`${SB.url}/storage/v1/object/videos/${path}`);
+    // 新しい形式のシークレットキーは apikey だけで送る
+    expect(upload.headers).toMatchObject({ apikey: "sb_secret_y", "content-type": "video/mp4", "x-upsert": "false" });
+    expect(upload.headers.authorization).toBeUndefined();
+
+    // 2回目は移し直さない。サーバー経由のアドレスも保存場所へ案内する
+    const again = world({ stored: true });
+    expect((await liveStatus(id, storeDeps(again.fn)))!.videoUrl).toBe(st!.videoUrl);
+    expect(again.calls.some((c) => c.method === "POST" || c.url === KLING_URL)).toBe(false);
+    const res = await liveVideo(id, null, storeDeps(again.fn));
+    expect(res.status).toBe(302);
+    expect(res.headers.get("location")).toBe(st!.videoUrl);
+    expect(await liveVideoUrl(id, storeDeps(again.fn))).toBe(st!.videoUrl);
+  });
+
+  it("同時に頼まれて先に置かれていても、そのまま使う", async () => {
+    const { fn } = world({ uploadStatus: 409 });
+    expect((await liveStatus(finalJob(), storeDeps(fn)))!.videoUrl).toMatch(/^https:\/\/proj\.supabase\.co\/storage\/v1\/object\/public\/videos\//);
+  });
+
+  it("移せなかったり、頼んだ人が分からなかったりしたら、今まで通りサーバー経由で返す", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const failed = world({ uploadStatus: 500 });
+    const id = finalJob();
+    expect((await liveStatus(id, storeDeps(failed.fn)))!.videoUrl).toBe(`/api/jobs/${id}/video`);
+
+    const noOwner = world();
+    const anon = finalJob(null);
+    expect((await liveStatus(anon, storeDeps(noOwner.fn)))!.videoUrl).toBe(`/api/jobs/${anon}/video`);
+    expect(noOwner.calls.some((c) => c.url.startsWith(SB.url))).toBe(false);
+    vi.restoreAllMocks();
+  });
+
+  it("下書きは保存場所に移さない", async () => {
+    const { fn, calls } = world();
+    const id = encodeLiveJob(
+      { kind: "draft", variant: "a", duration: 10, model: "kling-3.0", aspect: "9:16", sound: true, task: "d1", step: 1, steps: 1, next: null, startedAt: T0, owner: OWNER },
+      ENV,
+    );
+    expect((await liveStatus(id, storeDeps(fn)))!.videoUrl).toBe(`/api/jobs/${id}/video`);
+    expect(calls.some((c) => c.url.startsWith(SB.url))).toBe(false);
+  });
+
+  it("頼んだ人をジョブIDに入れる", async () => {
+    const { fn } = fakeFetch(() => json({ code: 0, data: { task_id: "task-1" } }));
+    const [id] = await startLive({ kind: "final", duration: 10, plan: WITH_LINE, sound: true, owner: OWNER }, deps(fn));
+    expect(decodeLiveJob(id, ENV)?.owner).toBe(OWNER);
   });
 });
 
