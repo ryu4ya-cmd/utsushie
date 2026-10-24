@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Noto_Sans_JP, Zen_Kaku_Gothic_New } from "next/font/google";
+import { Zen_Kaku_Gothic_New } from "next/font/google";
 import { FlowProvider } from "@/lib/flow";
 import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
-const noto = Noto_Sans_JP({ variable: "--font-noto", weight: ["400", "500", "700"], preload: false });
-const zen = Zen_Kaku_Gothic_New({ variable: "--font-zen", weight: ["700", "900"], preload: false });
+// 本文は端末の日本語フォント（iPhone はヒラギノ、Android は Noto Sans CJK）を使う。
+// 日本語のWebフォントは太さ1つで読み込みの指定だけでも数十KBあり、スマホで最初の表示が遅れるため、見出しの太字1つだけにする
+const zen = Zen_Kaku_Gothic_New({ variable: "--font-zen", weight: ["900"], preload: false });
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -24,7 +25,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="ja" className={`${noto.variable} ${zen.variable} h-full antialiased`}>
+    <html lang="ja" className={`${zen.variable} h-full antialiased`}>
       <body className="min-h-full">
         <FlowProvider>{children}</FlowProvider>
       </body>
