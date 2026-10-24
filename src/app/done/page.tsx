@@ -147,7 +147,7 @@ export default function DonePage() {
         </div>
 
         {toast && (
-          <div role="status" className="fixed inset-x-5 top-20 mx-auto max-w-[390px] rounded-xl bg-ink px-4 py-3 text-center text-sm font-medium text-bg">
+          <div role="status" className="fixed inset-x-5 top-[calc(env(safe-area-inset-top)+80px)] mx-auto max-w-[390px] rounded-xl bg-ink px-4 py-3 text-center text-sm font-medium text-bg">
             {toast}
           </div>
         )}

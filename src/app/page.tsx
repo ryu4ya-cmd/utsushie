@@ -90,6 +90,7 @@ export default function PurposePage() {
 
         <div className="flex-1" />
         <CtaLink href="/create">次へ：一文を書く</CtaLink>
+        <p className="-mt-3 text-center text-[11px] text-muted">バージョン {process.env.NEXT_PUBLIC_APP_VERSION}</p>
       </Screen>
     </WaitForFlow>
   );
