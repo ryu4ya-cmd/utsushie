@@ -99,7 +99,7 @@ export default function DonePage() {
           href={videoUrl ?? undefined}
           download="utsushie.mp4"
           aria-disabled={!videoUrl}
-          className="flex h-[54px] items-center justify-center gap-2 rounded-2xl bg-accent text-[17px] font-bold text-on-accent hover:bg-accent-hover"
+          className={`flex h-[54px] items-center justify-center gap-2 rounded-2xl bg-accent text-[17px] font-bold text-on-accent hover:bg-accent-hover ${videoUrl ? "" : "pointer-events-none opacity-50"}`}
         >
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M9 2.5v9M5 8l4 4 4-4M3 15.5h12" />

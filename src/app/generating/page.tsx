@@ -12,6 +12,12 @@ import { useJobs } from "@/lib/useJobs";
 
 const SEGMENTS = 24;
 
+/** 残り時間。本物の動画AIでは数分かかるので、1分を超えたら分で出す */
+function remaining(sec: number): string {
+  if (sec <= 60) return `約${Math.max(1, sec)}秒`;
+  return `約${Math.ceil(sec / 60)}分`;
+}
+
 export default function GeneratingPage() {
   const router = useRouter();
   const { state, loaded, update } = useFlow();
@@ -46,7 +52,7 @@ export default function GeneratingPage() {
     <WaitForFlow loaded={loaded}>
       <Screen>
         <header className="flex h-11 items-center gap-2">
-          <span className="flex-1 text-[17px] font-bold">{done ? "できあがりました" : "本番を作っています"}</span>
+          <span className="flex-1 text-[17px] font-bold" aria-live="polite">{done ? "できあがりました" : "本番を作っています"}</span>
           <Link href="/" aria-label="ホームに戻る（生成は続きます）" className="-mr-2.5 flex size-11 items-center justify-center hover:text-accent">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
               <path d="M5 5l10 10M15 5L5 15" />
@@ -68,7 +74,7 @@ export default function GeneratingPage() {
               style={{ objectPosition: `${photo.fx * 100}% ${photo.fy * 100}%` }}
             />
           )}
-          <span className="relative font-display text-[44px] font-black" aria-live="polite">{pct}%</span>
+          <span className="relative font-display text-[44px] font-black" aria-hidden="true">{pct}%</span>
           <span className="relative text-xs text-ink/90">下書き{pick.toUpperCase()}を高画質に</span>
           {planned && <span className="relative text-[11px] text-ink/70">{MODEL_LABEL[planned.model]}（練習モード）</span>}
         </div>
@@ -94,7 +100,7 @@ export default function GeneratingPage() {
           <CtaAnchor href="/done">完成した動画を見る</CtaAnchor>
         ) : (
           <div className="flex flex-col items-center gap-1.5 pb-2 text-center">
-            <span className="text-[15px] font-bold">あと約{job?.remainingSec ?? "…"}秒</span>
+            <span className="text-[15px] font-bold">あと{job ? remaining(job.remainingSec) : "…"}</span>
             <span className="text-[13px] leading-relaxed text-muted">
               画面を閉じても大丈夫です。
               <br />

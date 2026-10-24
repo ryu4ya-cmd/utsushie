@@ -13,8 +13,8 @@
   --color-accent-hover: #7ff0ff;
   --color-on-accent: #08060f;
   --color-magenta: #ff4fd8;
-  --font-sans: var(--font-noto), system-ui, sans-serif;
-  --font-display: var(--font-zen), var(--font-noto), sans-serif;
+  --font-sans: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Noto Sans CJK JP", "Yu Gothic UI", Meiryo, system-ui, sans-serif;
+  --font-display: var(--font-zen), var(--font-sans);
 }
 
 html {

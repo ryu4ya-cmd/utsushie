@@ -16,13 +16,28 @@ export function Screen({ children }: { children: React.ReactNode }) {
   );
 }
 
+/** スマホでは title（マウスを乗せると出る説明）が見られないので、タップで説明を出す */
 export function PracticeBadge() {
+  const [open, setOpen] = useState(false);
   return (
-    <span
-      className="rounded-full border border-line bg-surface px-3 py-1.5 text-xs text-ink"
-      title="外部の動画AIは使わず、サンプル動画を返しています"
-    >
-      練習モード
+    <span className="relative">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls="practice-note"
+        onClick={() => setOpen(!open)}
+        className="flex h-11 items-center"
+      >
+        <span className="rounded-full border border-line bg-surface px-3 py-1.5 text-xs text-ink">練習モード</span>
+      </button>
+      {open && (
+        <span
+          id="practice-note"
+          className="absolute top-12 right-0 z-10 w-60 rounded-xl border border-line-strong bg-surface-2 px-3.5 py-3 text-xs leading-relaxed text-ink"
+        >
+          いまは練習モードです。本物の動画AIは使わず、見本の動画が返ってきます。お金はかかりません。
+        </span>
+      )}
     </span>
   );
 }
@@ -154,7 +169,15 @@ export function ErrorBox({ message, onRetry }: { message: string; onRetry?: () =
 
 /** 保存した入力を読み込むまでは何も出さない（読み込み前の初期値で画面が一瞬ずれるのを防ぐ） */
 export function WaitForFlow({ loaded, children }: { loaded: boolean; children: React.ReactNode }) {
-  if (!loaded) return <Screen>{null}</Screen>;
+  // 真っ黒のままだと壊れて見えるので、読み込み中の印を出す（ページの HTML に入るので、スクリプトより先に出る）
+  if (!loaded)
+    return (
+      <Screen>
+        <div className="flex flex-1 items-center justify-center" role="status" aria-label="読み込んでいます">
+          <Spinner />
+        </div>
+      </Screen>
+    );
   return <>{children}</>;
 }
 

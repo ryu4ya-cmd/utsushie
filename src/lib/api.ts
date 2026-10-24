@@ -9,19 +9,29 @@ import type { Brief, FinalModel, Plan } from "@/lib/types";
 /** ログインが必要なときのエラー。画面はログインの画面へ案内する */
 export class LoginRequiredError extends Error {}
 
+/** 1日の回数を使い切ったときのエラー。「もう一度」を押しても変わらない */
+export class QuotaError extends Error {}
+
 async function post<T>(url: string, body: unknown): Promise<T> {
   const auth = await authHeaders();
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...auth },
-    body: JSON.stringify(body),
-  });
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...auth },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    // ブラウザの英語のエラー（Failed to fetch / Load failed）をそのまま出さない
+    throw new Error("通信に失敗しました。電波のよい所で、もう一度お試しください。");
+  }
   const data = await res.json().catch(() => ({}));
   if (res.status === 401 && data.login) {
     // ログインしているのにサーバーが認めないときは、ログイン画面へ送り返すと行ったり来たりになるので、ここで止める
     if (auth.Authorization) throw new Error("ログインを確かめられませんでした。右上の「アカウント」からログアウトして、もう一度ログインしてください。");
     throw new LoginRequiredError(data.error);
   }
+  if (res.status === 429 && data.quota) throw new QuotaError(data.error);
   if (!res.ok) throw new Error(data.error ?? "通信に失敗しました。もう一度お試しください。");
   return data as T;
 }
