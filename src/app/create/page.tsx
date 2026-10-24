@@ -47,7 +47,7 @@ export default function CreatePage() {
 
   return (
     <WaitForFlow loaded={loaded}>
-      <Screen>
+      <Screen wide>
         <BackHeader
           href="/"
           label="用途選択に戻る"
@@ -60,101 +60,109 @@ export default function CreatePage() {
         />
         <StepBar step={2} />
 
-        <PhotoPicker photo={photo} aspectRatio={b.purpose === "sns_vertical" ? "9:16" : "16:9"} onChange={setPhoto} />
+        {/* PC では左に写真と一文、右に細かい設定と作るボタンを並べる */}
+        <div className="flex flex-1 flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-10">
+          <div className="flex flex-col gap-5">
+            <PhotoPicker photo={photo} aspectRatio={b.purpose === "sns_vertical" ? "9:16" : "16:9"} onChange={setPhoto} />
 
-        <div className="flex flex-col gap-2">
-          <label htmlFor="idea" className="font-display text-[22px] font-black">
-            {photo ? "写真をどう動かしますか？" : "どんな動画にしますか？"}
-          </label>
-          <textarea
-            id="idea"
-            rows={3}
-            maxLength={MAX_SENTENCE}
-            placeholder={photo ? "例：髪が風になびいて、こちらに微笑む（空欄ならおまかせ）" : "例：夕焼けの海辺で猫が驚いてジャンプする"}
-            value={b.sentence_ja}
-            enterKeyHint="done"
-            onChange={(e) => setBrief({ sentence_ja: e.target.value.replace(/\s*\n\s*/g, " ") })}
-            // 一文なので改行は入れない。スマホのキーボードの「完了」でキーボードを閉じる
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.nativeEvent.isComposing) {
-                e.preventDefault();
-                e.currentTarget.blur();
-              }
-            }}
-            className="w-full resize-none rounded-2xl border-[1.5px] border-line bg-surface px-4 py-3.5 text-base leading-relaxed placeholder:text-muted focus:border-accent focus:outline-none"
-          />
-          <span className="self-end text-xs text-muted">
-            {count} / {MAX_SENTENCE}文字・セリフは「」で囲む
-          </span>
-        </div>
+            <div className="flex flex-col gap-2">
+              <label htmlFor="idea" className="font-display text-[22px] font-black">
+                {photo ? "写真をどう動かしますか？" : "どんな動画にしますか？"}
+              </label>
+              <textarea
+                id="idea"
+                rows={3}
+                maxLength={MAX_SENTENCE}
+                placeholder={photo ? "例：髪が風になびいて、こちらに微笑む（空欄ならおまかせ）" : "例：夕焼けの海辺で猫が驚いてジャンプする"}
+                value={b.sentence_ja}
+                enterKeyHint="done"
+                onChange={(e) => setBrief({ sentence_ja: e.target.value.replace(/\s*\n\s*/g, " ") })}
+                // 一文なので改行は入れない。スマホのキーボードの「完了」でキーボードを閉じる
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+                    e.preventDefault();
+                    e.currentTarget.blur();
+                  }
+                }}
+                className="w-full resize-none rounded-2xl border-[1.5px] border-line bg-surface px-4 py-3.5 text-base leading-relaxed placeholder:text-muted focus:border-accent focus:outline-none"
+              />
+              <span className="self-end text-xs text-muted">
+                {count} / {MAX_SENTENCE}文字・セリフは「」で囲む
+              </span>
+            </div>
 
-        <div className="flex flex-col gap-2">
-          <span className="text-[13px] text-muted">例をタップして入れる</span>
-          <div className="flex flex-col gap-1.5">
-            {examples.map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setBrief({ sentence_ja: t })}
-                className="min-h-10 rounded-xl border border-line px-3 py-2 text-left text-[13px] leading-normal text-ink/85 hover:border-accent hover:text-ink"
+            <div className="flex flex-col gap-2">
+              <span className="text-[13px] text-muted">例を選んで入れる</span>
+              <div className="flex flex-col gap-1.5">
+                {examples.map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setBrief({ sentence_ja: t })}
+                    className="min-h-10 rounded-xl border border-line px-3 py-2 text-left text-[13px] leading-normal text-ink/85 hover:border-accent hover:text-ink"
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+          </div>
+
+          <div className="flex flex-1 flex-col gap-5 lg:sticky lg:top-8 lg:flex-none lg:rounded-[18px] lg:border lg:border-line lg:p-5">
+            <div className="flex flex-col gap-2">
+              <span className="text-sm font-bold">雰囲気</span>
+              <div className="grid grid-cols-4 gap-2">
+                {MOODS.map((m) => (
+                  <Chip key={m.id} on={b.mood === m.id} onClick={() => setBrief({ mood: m.id })} className="h-11">
+                    {m.label}
+                  </Chip>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-bold">長さ</span>
+              <div className="flex gap-2">
+                {([10, 15] as const).map((n) => (
+                  <Chip key={n} on={b.duration_sec === n} onClick={() => setBrief({ duration_sec: n })} className="h-10 w-[76px] rounded-full">
+                    {n}秒
+                  </Chip>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-col rounded-[14px] bg-surface px-4 py-1">
+              <div className="flex min-h-12 items-center justify-between">
+                <span id="lbl-sound" className="text-sm">声・効果音を自動で入れる</span>
+                <Switch labelId="lbl-sound" on={b.sound} onClick={() => setBrief({ sound: !b.sound })} />
+              </div>
+              <div className="h-px bg-line" />
+              <div className="flex min-h-12 items-center justify-between">
+                <span id="lbl-sub" className="text-sm">日本語字幕を付ける</span>
+                <Switch labelId="lbl-sub" on={b.subtitles} onClick={() => setBrief({ subtitles: !b.subtitles })} />
+              </div>
+            </div>
+
+            <div className="flex-1 lg:hidden" />
+            <div className="flex flex-col gap-2">
+              <span className="text-center text-xs text-muted" aria-live="polite">
+                {!b.sentence_ja.trim() && !photo
+                  ? "一文を書くか、例を選ぶか、写真を選ぶと作れます"
+                  : left === 0
+                    ? "今日の分は使い切りました。日本時間の0時にまた作れます"
+                    : left !== null
+                      ? `今日はあと${left}回、下書きを作れます（1回で2本）`
+                      : "練習モードでは、サンプル動画が返ってきます"}
+              </span>
+              <CtaButton
+                disabled={!canGo || !auth.loaded || left === 0}
+                onClick={() => router.push(needLogin ? "/login?next=/drafts" : "/drafts")}
               >
-                {t}
-              </button>
-            ))}
+                {needLogin ? "ログインして下書きを作る" : photo ? "写真から下書きを2本作る" : "下書きを2本作る"}
+              </CtaButton>
+            </div>
           </div>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <span className="text-sm font-bold">雰囲気</span>
-          <div className="grid grid-cols-4 gap-2">
-            {MOODS.map((m) => (
-              <Chip key={m.id} on={b.mood === m.id} onClick={() => setBrief({ mood: m.id })} className="h-11">
-                {m.label}
-              </Chip>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-bold">長さ</span>
-          <div className="flex gap-2">
-            {([10, 15] as const).map((n) => (
-              <Chip key={n} on={b.duration_sec === n} onClick={() => setBrief({ duration_sec: n })} className="h-10 w-[76px] rounded-full">
-                {n}秒
-              </Chip>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex flex-col rounded-[14px] bg-surface px-4 py-1">
-          <div className="flex min-h-12 items-center justify-between">
-            <span id="lbl-sound" className="text-sm">声・効果音を自動で入れる</span>
-            <Switch labelId="lbl-sound" on={b.sound} onClick={() => setBrief({ sound: !b.sound })} />
-          </div>
-          <div className="h-px bg-line" />
-          <div className="flex min-h-12 items-center justify-between">
-            <span id="lbl-sub" className="text-sm">日本語字幕を付ける</span>
-            <Switch labelId="lbl-sub" on={b.subtitles} onClick={() => setBrief({ subtitles: !b.subtitles })} />
-          </div>
-        </div>
-
-        <div className="flex-1" />
-        <div className="flex flex-col gap-2">
-          <span className="text-center text-xs text-muted" aria-live="polite">
-            {!b.sentence_ja.trim() && !photo
-              ? "一文を書くか、例をタップするか、写真を選ぶと作れます"
-              : left === 0
-                ? "今日の分は使い切りました。日本時間の0時にまた作れます"
-                : left !== null
-                  ? `今日はあと${left}回、下書きを作れます（1回で2本）`
-                  : "練習モードでは、サンプル動画が返ってきます"}
-          </span>
-          <CtaButton
-            disabled={!canGo || !auth.loaded || left === 0}
-            onClick={() => router.push(needLogin ? "/login?next=/drafts" : "/drafts")}
-          >
-            {needLogin ? "ログインして下書きを作る" : photo ? "写真から下書きを2本作る" : "下書きを2本作る"}
-          </CtaButton>
         </div>
       </Screen>
     </WaitForFlow>

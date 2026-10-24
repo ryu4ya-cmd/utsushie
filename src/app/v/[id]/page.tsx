@@ -61,7 +61,7 @@ async function Video(props: Props) {
   return (
     <>
       <h1 className="font-display text-[24px] leading-snug font-black">{v.title}</h1>
-      <div className="relative w-[236px] self-center overflow-hidden rounded-[18px] bg-surface">
+      <div className="relative w-[236px] self-center overflow-hidden rounded-[18px] bg-surface lg:w-[320px]">
         <video src={`${v.videoUrl}#t=0.1`} className="aspect-[9/16] w-full object-cover" controls playsInline preload="metadata" />
         <span className="absolute top-2.5 left-2.5 rounded-md bg-bg px-2 py-0.5 text-[11px] font-bold">AI生成</span>
       </div>
@@ -73,7 +73,7 @@ export default function SharedVideoPage(props: Props) {
   return (
     <Screen>
       <BrandHeader />
-      <Suspense fallback={<div className="aspect-[9/16] w-[236px] self-center rounded-[18px] bg-surface" />}>
+      <Suspense fallback={<div className="aspect-[9/16] w-[236px] self-center rounded-[18px] bg-surface lg:w-[320px]" />}>
         <Video {...props} />
       </Suspense>
       <p className="text-center text-[13px] leading-relaxed text-muted">

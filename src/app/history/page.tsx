@@ -31,7 +31,7 @@ export default function HistoryPage() {
   };
 
   return (
-    <Screen>
+    <Screen wide>
       <BackHeader href="/" label="ホームに戻る" title="作った動画" />
       {list && (
         <p className="-mt-3 text-xs leading-relaxed text-muted">
@@ -46,7 +46,7 @@ export default function HistoryPage() {
         </div>
       )}
 
-      <ul className="flex flex-col gap-3">
+      <ul className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:items-start lg:gap-4">
         {list?.map((e) => {
           const open = openId === e.id;
           return (
@@ -101,7 +101,9 @@ export default function HistoryPage() {
       </ul>
 
       <div className="flex-1" />
-      <CtaLink href="/">新しく作る</CtaLink>
+      <div className="flex flex-col lg:mx-auto lg:w-[380px]">
+        <CtaLink href="/">新しく作る</CtaLink>
+      </div>
       <Toast message={toast} />
     </Screen>
   );
