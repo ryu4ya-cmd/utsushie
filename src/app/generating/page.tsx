@@ -14,9 +14,10 @@ const SEGMENTS = 24;
 
 export default function GeneratingPage() {
   const router = useRouter();
-  const { state, loaded } = useFlow();
+  const { state, loaded, update } = useFlow();
   const { finalId, planned, pick, brief } = state;
-  const { jobs, error } = useJobs(finalId ? [finalId] : []);
+  // 本番モードの Veo は途中で延長を頼むとジョブIDが変わるので、新しいIDを覚えておく
+  const { jobs, error } = useJobs(finalId ? [finalId] : [], (ids) => update({ finalId: ids[0] }));
   const job = jobs[0];
   const pct = job?.progress ?? 0;
   const done = job?.state === "done";

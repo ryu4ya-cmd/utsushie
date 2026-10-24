@@ -33,7 +33,7 @@ export default function DraftsPage() {
       try {
         const p = planned ?? (await requestPlan(brief));
         if (!planned) update({ planned: p });
-        update({ draftIds: await startDrafts(brief.duration_sec) });
+        update({ draftIds: await startDrafts(brief, p.plan) });
       } catch (e) {
         setError(e instanceof Error ? e.message : "うまくいきませんでした");
       } finally {
@@ -51,7 +51,7 @@ export default function DraftsPage() {
     if (!planned) return;
     setStarting(true);
     try {
-      const finalId = await startFinal(brief.duration_sec, planned.model);
+      const finalId = await startFinal(brief, planned.plan, planned.model);
       update({ finalId });
       router.push("/generating");
     } catch (e) {

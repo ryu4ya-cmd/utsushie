@@ -1,7 +1,9 @@
 // 生成ジョブを始める。練習モードではサンプル動画を返すジョブIDを作るだけ。
+// 本番モードでは設計図から指示文を作り、Kling 3.0 か Veo 3.1 に生成を頼む。
 
 import { encodeJob, type JobSpec } from "@/lib/jobs";
-import { appMode, LiveModeNotReadyError } from "@/lib/mode";
+import { appMode } from "@/lib/mode";
+import { liveError, parsePlan, startLive } from "@/lib/video/live";
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
@@ -11,8 +13,13 @@ export async function POST(request: Request) {
   if (duration !== 10 && duration !== 15) return Response.json({ error: "長さは10秒か15秒です" }, { status: 400 });
 
   if (appMode() === "live") {
-    const err = new LiveModeNotReadyError("動画生成");
-    return Response.json({ error: err.message }, { status: 501 });
+    try {
+      const plan = parsePlan(body?.plan, duration);
+      const ids = await startLive({ kind, duration, plan, sound: body?.sound !== false }, { env: process.env, fetch, now: Date.now() });
+      return Response.json({ ids, practice: false });
+    } catch (e) {
+      return liveError(e);
+    }
   }
 
   const startedAt = Date.now();

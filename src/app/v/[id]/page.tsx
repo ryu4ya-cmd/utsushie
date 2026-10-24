@@ -1,22 +1,29 @@
 // 共有ページ。SNS で送ったリンクを開いた人が、ログインなしで動画を見られる。
-// 練習モードではジョブIDからサンプル動画を割り出す。本番モードでは保存した動画のアドレスを引く予定。
+// 練習モードではジョブIDからサンプル動画を割り出す。本番モードでは署名付きのジョブIDから完成動画のアドレスを引く。
 
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { BrandHeader, CtaLink, Screen } from "@/components/ui";
 import { decodeJob, sampleVideo } from "@/lib/jobs";
+import { appMode } from "@/lib/mode";
 import { SITE_URL } from "@/lib/site";
+import { liveVideoUrl } from "@/lib/video/live";
 
 type Props = PageProps<"/v/[id]">;
 
 async function load({ params, searchParams }: Props) {
   const { id } = await params;
-  const spec = decodeJob(id);
-  if (!spec || spec.kind !== "final") return null;
+  const videoUrl = appMode() === "live" ? liveVideoUrl(id, process.env) : practiceVideoUrl(id);
+  if (!videoUrl) return null;
   const t = (await searchParams).t;
   const title = (typeof t === "string" && t.trim().slice(0, 60)) || "ウツシエで作った動画";
-  return { title, videoUrl: sampleVideo(spec) };
+  return { title, videoUrl };
+}
+
+function practiceVideoUrl(id: string) {
+  const spec = decodeJob(id);
+  return spec?.kind === "final" ? sampleVideo(spec) : null;
 }
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
