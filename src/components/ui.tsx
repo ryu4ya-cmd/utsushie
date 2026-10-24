@@ -4,6 +4,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export function Screen({ children }: { children: React.ReactNode }) {
   return (
@@ -32,7 +33,12 @@ export function BrandHeader() {
         <Image src="/brand/mark-on-dark.svg" alt="" width={32} height={32} priority />
         <span className="font-display text-lg font-black tracking-wide">ウツシエ</span>
       </Link>
-      <PracticeBadge />
+      <div className="flex items-center gap-1">
+        <Link href="/history" className="flex h-11 items-center px-2.5 text-sm text-ink hover:text-accent">
+          履歴
+        </Link>
+        <PracticeBadge />
+      </div>
     </header>
   );
 }
@@ -131,4 +137,26 @@ export function ErrorBox({ message }: { message: string }) {
 export function WaitForFlow({ loaded, children }: { loaded: boolean; children: React.ReactNode }) {
   if (!loaded) return <Screen>{null}</Screen>;
   return <>{children}</>;
+}
+
+/** 画面上部に少しだけ出るお知らせ */
+export function useToast() {
+  const [toast, setToast] = useState("");
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(timer.current), []);
+  const flash = useCallback((msg: string) => {
+    clearTimeout(timer.current);
+    setToast(msg);
+    timer.current = setTimeout(() => setToast(""), 2200);
+  }, []);
+  return { toast, flash };
+}
+
+export function Toast({ message }: { message: string }) {
+  if (!message) return null;
+  return (
+    <div role="status" className="fixed inset-x-5 top-[calc(env(safe-area-inset-top)+80px)] z-10 mx-auto max-w-[390px] rounded-xl bg-ink px-4 py-3 text-center text-sm font-medium text-bg">
+      {message}
+    </div>
+  );
 }

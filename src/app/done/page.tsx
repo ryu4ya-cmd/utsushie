@@ -5,12 +5,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Chip, Screen, WaitForFlow } from "@/components/ui";
+import { SharePanel } from "@/components/SharePanel";
+import { Chip, Screen, Toast, useToast, WaitForFlow } from "@/components/ui";
 import { useFlow } from "@/lib/flow";
+import { addEntry, loadHistory, saveHistory } from "@/lib/history";
 import { toWebVtt } from "@/lib/plan/build";
 import { useJobs } from "@/lib/useJobs";
-
-const SHARE_TARGETS = ["TikTok", "Instagram", "YouTube", "LINE"];
 
 export default function DonePage() {
   const router = useRouter();
@@ -20,9 +20,9 @@ export default function DonePage() {
   const videoUrl = jobs[0]?.state === "done" ? jobs[0].videoUrl : null;
   const cues = useMemo(() => planned?.subtitles ?? [], [planned]);
   const [subOn, setSubOn] = useState(brief.subtitles);
-  const [toast, setToast] = useState("");
+  const { toast, flash } = useToast();
   const videoRef = useRef<HTMLVideoElement>(null);
-  const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const title = planned?.plan.title_ja ?? "ウツシエ";
 
   useEffect(() => {
     if (loaded && !finalId) router.replace("/");
@@ -40,28 +40,23 @@ export default function DonePage() {
     if (track) track.mode = subOn ? "showing" : "hidden";
   }, [subOn, vttUrl, videoUrl]);
 
-  useEffect(() => () => clearTimeout(toastTimer.current), []);
-  const flash = (msg: string) => {
-    clearTimeout(toastTimer.current);
-    setToast(msg);
-    toastTimer.current = setTimeout(() => setToast(""), 2200);
-  };
-
-  const share = async (target: string) => {
-    if (!videoUrl) return;
-    try {
-      const blob = await (await fetch(videoUrl)).blob();
-      const file = new File([blob], "utsushie.mp4", { type: "video/mp4" });
-      if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: planned?.plan.title_ja ?? "ウツシエ" });
-        return;
-      }
-      flash(`この端末では共有画面を開けません。保存してから${target}に投稿してください`);
-    } catch (e) {
-      if (e instanceof DOMException && e.name === "AbortError") return; // 共有をやめた
-      flash("共有できませんでした");
-    }
-  };
+  // できあがったら履歴に残す（同じ動画は1件にまとめる）
+  useEffect(() => {
+    if (!finalId || !videoUrl || !planned) return;
+    saveHistory(
+      addEntry(loadHistory(), {
+        id: finalId,
+        createdAt: Date.now(),
+        title: planned.plan.title_ja,
+        sentence: brief.sentence_ja,
+        duration: brief.duration_sec,
+        aspect: planned.plan.aspect_ratio,
+        model: planned.model,
+        videoUrl,
+        subtitles: planned.subtitles,
+      }),
+    );
+  }, [finalId, videoUrl, planned, brief.sentence_ja, brief.duration_sec]);
 
   return (
     <WaitForFlow loaded={loaded}>
@@ -110,13 +105,7 @@ export default function DonePage() {
           MP4で保存
         </a>
 
-        <div className="grid grid-cols-4 gap-2">
-          {SHARE_TARGETS.map((t) => (
-            <button key={t} type="button" onClick={() => share(t)} className="h-11 rounded-xl border border-line bg-surface text-xs hover:border-accent">
-              {t}
-            </button>
-          ))}
-        </div>
+        {finalId && <SharePanel id={finalId} title={title} videoUrl={videoUrl} flash={flash} />}
 
         <div className="flex-1" />
         <div className="flex items-center justify-between text-sm">
@@ -132,7 +121,9 @@ export default function DonePage() {
               15秒版も作る
             </button>
           ) : (
-            <span />
+            <Link href="/history" className="flex min-h-11 items-center text-accent hover:text-accent-hover">
+              履歴を見る
+            </Link>
           )}
           <button
             type="button"
@@ -146,11 +137,7 @@ export default function DonePage() {
           </button>
         </div>
 
-        {toast && (
-          <div role="status" className="fixed inset-x-5 top-[calc(env(safe-area-inset-top)+80px)] mx-auto max-w-[390px] rounded-xl bg-ink px-4 py-3 text-center text-sm font-medium text-bg">
-            {toast}
-          </div>
-        )}
+        <Toast message={toast} />
       </Screen>
     </WaitForFlow>
   );
