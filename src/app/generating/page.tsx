@@ -17,7 +17,7 @@ export default function GeneratingPage() {
   const { state, loaded, update } = useFlow();
   const { finalId, planned, pick, brief, photo } = state;
   // 本番モードの Veo は途中で延長を頼むとジョブIDが変わるので、新しいIDを覚えておく
-  const { jobs, error } = useJobs(finalId ? [finalId] : [], (ids) => update({ finalId: ids[0] }));
+  const { jobs, error, retry } = useJobs(finalId ? [finalId] : [], (ids) => update({ finalId: ids[0] }));
   const job = jobs[0];
   const pct = job?.progress ?? 0;
   const done = job?.state === "done";
@@ -25,6 +25,13 @@ export default function GeneratingPage() {
   useEffect(() => {
     if (loaded && !finalId) router.replace("/drafts");
   }, [loaded, finalId, router]);
+
+  // できあがったら、ボタンを押さなくても完成画面へ進む（ページを読み込み直して移る。下のボタンと同じ理由。戻るでこの画面に戻って行き来しないよう、履歴は置き換える）
+  useEffect(() => {
+    if (!done) return;
+    const t = setTimeout(() => location.replace("/done"), 900);
+    return () => clearTimeout(t);
+  }, [done]);
 
   const steps = [
     { label: "映像を高画質で作る", from: 0, to: 60 },
@@ -48,7 +55,7 @@ export default function GeneratingPage() {
         </header>
         <StepBar step={4} />
 
-        {error && <ErrorBox message={error} />}
+        {error && <ErrorBox message={error} onRetry={retry} />}
 
         <div className="relative flex aspect-[9/16] w-[200px] flex-col items-center justify-center gap-1 self-center overflow-hidden rounded-[18px] bg-gradient-to-br from-accent/40 to-magenta/40">
           {photo && (

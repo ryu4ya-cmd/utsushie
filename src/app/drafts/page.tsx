@@ -18,8 +18,10 @@ export default function DraftsPage() {
   const [error, setError] = useState<string | null>(null);
   const [openPrompt, setOpenPrompt] = useState(false);
   const [starting, setStarting] = useState(false);
+  // 「もう一度」で指示文づくり・下書きの生成をやり直す
+  const [attempt, setAttempt] = useState(0);
   const busy = useRef(false);
-  const { jobs, error: jobError } = useJobs(draftIds);
+  const { jobs, error: jobError, retry: retryJobs } = useJobs(draftIds);
 
   // 指示文づくり → 下書き2本の生成を順に始める
   useEffect(() => {
@@ -44,7 +46,13 @@ export default function DraftsPage() {
         busy.current = false;
       }
     })();
-  }, [loaded, brief, planned, draftIds.length, photo, router, update]);
+  }, [loaded, brief, planned, draftIds.length, photo, router, update, attempt]);
+
+  const retry = () => {
+    if (jobError) retryJobs();
+    setError(null);
+    setAttempt((n) => n + 1);
+  };
 
   const ready = jobs.length === 2 && jobs.every((j) => j?.state === "done");
   const progress = jobs.length ? Math.min(...jobs.map((j) => j?.progress ?? 0)) : 0;
@@ -72,12 +80,13 @@ export default function DraftsPage() {
         <BackHeader href="/create" label="一文の入力に戻る" title="下書きを選ぶ" />
         <StepBar step={3} />
 
-        {(error || jobError) && <ErrorBox message={(error || jobError) as string} />}
+        {(error || jobError) && <ErrorBox message={(error || jobError) as string} onRetry={retry} />}
 
         {!ready && !error && !jobError && (
           <div className="flex flex-1 flex-col items-center justify-center gap-5 text-center">
             <Spinner />
             <p className="text-[17px] font-bold" aria-live="polite">{phase}</p>
+            <p className="line-clamp-2 px-2 text-sm leading-relaxed text-ink/85">「{brief.sentence_ja}」</p>
             <p className="text-[13px] leading-relaxed text-muted">
               安いモデルで5秒の下書きを作り、
               <br />
@@ -159,7 +168,7 @@ export default function DraftsPage() {
             <div className="flex-1" />
             <div className="flex flex-col gap-2.5">
               <CtaButton onClick={goFinal} disabled={starting}>
-                {name}で本番を作る（高画質・{brief.sound ? "音付き" : "音なし"}{brief.duration_sec}秒）
+                {starting ? "本番を始めています…" : `${name}で本番を作る（高画質・${brief.sound ? "音付き" : "音なし"}${brief.duration_sec}秒）`}
               </CtaButton>
               <div className="flex items-center justify-between text-[13px]">
                 <span className="text-muted">練習モードは0円</span>

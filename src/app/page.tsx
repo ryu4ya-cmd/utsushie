@@ -2,6 +2,8 @@
 
 // ① 用途を選ぶ
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { BrandHeader, CtaLink, Screen, StepBar, WaitForFlow } from "@/components/ui";
 import { useFlow } from "@/lib/flow";
 import type { Purpose } from "@/lib/types";
@@ -34,7 +36,14 @@ const OPTIONS: { id: Purpose | null; title: string; note: string; icon: React.Re
 ];
 
 export default function PurposePage() {
+  const router = useRouter();
   const { state, loaded, setBrief } = useFlow();
+  // 前に作りかけたもの（タブやアプリを閉じても残っている）
+  const resume = state.finalId
+    ? { href: "/generating", label: "前に作った本番の動画を見る" }
+    : state.draftIds.length
+      ? { href: "/drafts", label: "前に作った下書きから選ぶ" }
+      : null;
 
   return (
     <WaitForFlow loaded={loaded}>
@@ -44,8 +53,23 @@ export default function PurposePage() {
 
         <div className="flex flex-col gap-2">
           <h1 className="font-display text-[30px] leading-snug font-black">何を作りますか？</h1>
-          <p className="text-[15px] leading-relaxed text-muted">用途を選ぶと、動画の形と長さを自動で合わせます。</p>
+          <p className="text-[15px] leading-relaxed text-muted">タップすると、動画の形を合わせて次へ進みます。</p>
         </div>
+
+        {resume && (
+          <Link
+            href={resume.href}
+            className="-mt-1 flex items-center gap-3 rounded-[14px] border border-accent/60 bg-surface-2 px-4 py-3 hover:border-accent"
+          >
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="text-sm font-bold">{resume.label}</span>
+              <span className="truncate text-xs text-muted">「{state.brief.sentence_ja}」</span>
+            </span>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="var(--color-accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M7 4l5 5-5 5" />
+            </svg>
+          </Link>
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           {OPTIONS.map((o) => {
@@ -56,7 +80,12 @@ export default function PurposePage() {
                 type="button"
                 disabled={o.id === null}
                 aria-pressed={o.id === null ? undefined : on}
-                onClick={() => o.id && o.id !== state.brief.purpose && setBrief({ purpose: o.id })}
+                onClick={() => {
+                  // 選んだらそのまま次へ進む（選んでから下のボタンを押す、の2手を1手にする）
+                  if (!o.id) return;
+                  if (o.id !== state.brief.purpose) setBrief({ purpose: o.id });
+                  router.push("/create");
+                }}
                 className={`flex min-h-[168px] flex-col gap-2.5 rounded-[18px] border-[1.5px] p-4 text-left ${
                   o.id === null
                     ? "cursor-not-allowed border-dashed border-line bg-bg"
