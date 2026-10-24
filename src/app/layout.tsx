@@ -1,12 +1,14 @@
 import type { Metadata, Viewport } from "next";
 import { Noto_Sans_JP, Zen_Kaku_Gothic_New } from "next/font/google";
 import { FlowProvider } from "@/lib/flow";
+import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 const noto = Noto_Sans_JP({ variable: "--font-noto", weight: ["400", "500", "700"], preload: false });
 const zen = Zen_Kaku_Gothic_New({ variable: "--font-zen", weight: ["700", "900"], preload: false });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "ウツシエ",
   description: "日本語の一文から、声や効果音まで入った短い動画を作る",
   applicationName: "ウツシエ",

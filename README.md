@@ -12,6 +12,8 @@
 | ③ | AI が直した指示文を見て、下書き2本から選ぶ | `src/app/drafts/page.tsx` |
 | ④ | 本番を生成中 | `src/app/generating/page.tsx` |
 | ⑤ | 字幕の切り替え・MP4 保存・共有 | `src/app/done/page.tsx` |
+| — | 作った動画の履歴 | `src/app/history/page.tsx` |
+| — | 共有ページ（リンクを開いた人が見る） | `src/app/v/[id]/page.tsx` |
 
 ## 動かし方（自分のパソコンで）
 
@@ -40,6 +42,8 @@ npm run build   # 公開用にまとめる
 - **モデルの選び方**：セリフ（「」）があれば Kling 3.0、なければ Veo 3.1（`src/lib/models.ts`）。
 - **生成ジョブ**：`POST /api/jobs` で始め、`GET /api/jobs/:id` で進み具合を見ます。練習モードではジョブIDに開始時刻を入れ、経過時間から進み具合を計算します（サーバーに状態を持たないので Vercel の無料プランでもそのまま動きます）。
 - **字幕**：セリフから WebVTT を作って動画に重ねています。MP4 への焼き込みは本番モードで FFmpeg を使う予定です。
+- **履歴**：完成画面を開くと、この端末のブラウザ（localStorage）に自動で残します（最大50本、`src/lib/history.ts`）。ログインを入れたら同じ形のままサーバーにも保存する予定です。
+- **共有**：「動画を送る」は端末の共有画面で MP4 を渡します（TikTok・Instagram・YouTube 向け）。X・LINE・Facebook とリンクのコピーは共有ページ `/v/:id` のアドレスを送ります（`src/lib/share.ts`）。どれも API キーやログインは要りません。練習モードではジョブIDからサンプル動画を割り出すので、サーバーに何も保存しません。
 - **モード切り替え**：`src/lib/mode.ts`。`UTSUSHIE_MODE=live` はまだ実装しておらず、選ぶとエラーになります。
 
 ## サンプル動画を作り直す
@@ -57,6 +61,7 @@ bash scripts/make-samples.sh   # ffmpeg が必要
 ## まだ作っていないもの
 
 - 本物の LLM（指示文の書き直し）と動画 API（Kling 3.0 / Veo 3.1）へのつなぎ込み
-- ログイン、生成履歴、クレジットと決済
+- ログインと、履歴を端末をまたいで見られるようにすること（Supabase の無料プランを想定）
+- クレジットと決済
 - 入力・出力のモデレーション
 - 字幕の焼き込み（FFmpeg）
