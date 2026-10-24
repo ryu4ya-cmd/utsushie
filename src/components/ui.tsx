@@ -7,10 +7,15 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSession } from "@/lib/supabase/browser";
 
-export function Screen({ children }: { children: React.ReactNode }) {
+/** wide を付けると、PC の広い画面では横幅を広げて2列などに並べられる（スマホでは同じ1列） */
+export function Screen({ children, wide = false }: { children: React.ReactNode; wide?: boolean }) {
   return (
     // iPhone の画面上端（時計）と下端（ホームバー・Safari のツールバー）に重ならないよう、安全な余白を足す
-    <main className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col gap-5 px-5 pt-[calc(env(safe-area-inset-top)+20px)] pb-[calc(env(safe-area-inset-bottom)+28px)]">
+    <main
+      className={`mx-auto flex min-h-dvh w-full max-w-[430px] flex-col gap-5 px-5 pt-[calc(env(safe-area-inset-top)+20px)] pb-[calc(env(safe-area-inset-bottom)+28px)] md:pt-8 ${
+        wide ? "lg:max-w-[1120px] lg:gap-6 lg:px-10" : ""
+      }`}
+    >
       {children}
     </main>
   );

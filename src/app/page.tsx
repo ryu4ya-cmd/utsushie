@@ -48,16 +48,16 @@ export default function PurposePage() {
         : null;
 
   return (
-    <Screen>
+    <Screen wide>
       <BrandHeader />
       <StepBar step={1} />
 
       <div className="flex flex-col gap-2">
-        <h1 className="font-display text-[30px] leading-snug font-black">何を作りますか？</h1>
-        <p className="text-[15px] leading-relaxed text-muted">タップすると、動画の形を合わせて次へ進みます。</p>
+        <h1 className="font-display text-[30px] leading-snug font-black lg:text-[40px]">何を作りますか？</h1>
+        <p className="text-[15px] leading-relaxed text-muted">選ぶと、動画の形を合わせて次へ進みます。</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
         {OPTIONS.map((o) => {
           return (
             <button
@@ -70,7 +70,7 @@ export default function PurposePage() {
                 if (o.id !== state.brief.purpose) setBrief({ purpose: o.id });
                 router.push("/create");
               }}
-              className={`flex min-h-[168px] flex-col gap-2.5 rounded-[18px] border-[1.5px] p-4 text-left ${
+              className={`flex min-h-[168px] flex-col gap-2.5 lg:min-h-[200px] lg:p-5 rounded-[18px] border-[1.5px] p-4 text-left ${
                 o.id === null
                   ? "cursor-not-allowed border-dashed border-line bg-bg"
                   : "border-line bg-surface hover:border-accent active:border-accent active:bg-surface-2"
@@ -89,31 +89,33 @@ export default function PurposePage() {
         })}
       </div>
 
-      {resume && (
-        <Link
-          href={resume.href}
-          className="flex items-center gap-3 rounded-[14px] border border-accent/60 bg-surface-2 px-4 py-3 hover:border-accent"
-        >
-          <span className="flex min-w-0 flex-1 flex-col">
-            <span className="text-sm font-bold">{resume.label}</span>
-            <span className="truncate text-xs text-muted">
-              {state.brief.sentence_ja ? `「${state.brief.sentence_ja}」` : state.photo ? "写真から・動きはおまかせ" : ""}
+      <div className="flex flex-col gap-5 lg:grid lg:grid-cols-2 lg:items-start lg:gap-4">
+        {resume && (
+          <Link
+            href={resume.href}
+            className="flex items-center gap-3 rounded-[14px] border border-accent/60 bg-surface-2 px-4 py-3 hover:border-accent"
+          >
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="text-sm font-bold">{resume.label}</span>
+              <span className="truncate text-xs text-muted">
+                {state.brief.sentence_ja ? `「${state.brief.sentence_ja}」` : state.photo ? "写真から・動きはおまかせ" : ""}
+              </span>
             </span>
-          </span>
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="var(--color-accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M7 4l5 5-5 5" />
-          </svg>
-        </Link>
-      )}
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="var(--color-accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M7 4l5 5-5 5" />
+            </svg>
+          </Link>
+        )}
 
-      <div className="flex items-start gap-3 rounded-[14px] bg-surface px-4 py-3.5">
-        <svg className="mt-0.5 flex-none" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="var(--color-accent)" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
-          <circle cx="10" cy="10" r="8" />
-          <path d="M10 9v5M10 6h.01" />
-        </svg>
-        <p className="text-[13px] leading-relaxed text-ink/85">
-          プロンプトの書き方は知らなくて大丈夫。日本語の一文だけで、声や効果音まで入った動画ができます。手持ちの写真を動かすこともできます（次の画面で選べます）。
-        </p>
+        <div className={`flex items-start gap-3 rounded-[14px] bg-surface px-4 py-3.5 ${resume ? "" : "lg:col-span-2"}`}>
+          <svg className="mt-0.5 flex-none" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="var(--color-accent)" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+            <circle cx="10" cy="10" r="8" />
+            <path d="M10 9v5M10 6h.01" />
+          </svg>
+          <p className="text-[13px] leading-relaxed text-ink/85">
+            プロンプトの書き方は知らなくて大丈夫。日本語の一文だけで、声や効果音まで入った動画ができます。手持ちの写真を動かすこともできます（次の画面で選べます）。
+          </p>
+        </div>
       </div>
 
       <div className="flex-1" />

@@ -83,7 +83,7 @@ export default function DraftsPage() {
 
   return (
     <WaitForFlow loaded={loaded}>
-      <Screen>
+      <Screen wide>
         <BackHeader href="/create" label="一文の入力に戻る" title="下書きを選ぶ" />
         <StepBar step={3} />
 
@@ -107,8 +107,9 @@ export default function DraftsPage() {
         )}
 
         {ready && planned && (
-          <>
-            <div className="flex flex-col gap-2 rounded-[14px] bg-surface px-3.5 py-3">
+          // PC では左に下書き2本を大きく、右に指示文と本番へ進むボタンを並べる
+          <div className="flex flex-1 flex-col gap-5 lg:grid lg:flex-none lg:grid-cols-[minmax(0,1fr)_380px] lg:grid-rows-[auto_1fr] lg:items-start lg:gap-x-10 lg:gap-y-5">
+            <div className="flex flex-col gap-2 rounded-[14px] bg-surface px-3.5 py-3 lg:col-start-2 lg:row-start-1">
               <div className="flex items-center justify-between gap-2">
                 <span className="flex items-center gap-2 text-[13px] font-bold">
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--color-accent)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -144,7 +145,7 @@ export default function DraftsPage() {
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:mx-auto lg:w-full lg:max-w-[600px] lg:gap-5">
               {(["a", "b"] as const).map((v, i) => {
                 const on = pick === v;
                 return (
@@ -176,8 +177,8 @@ export default function DraftsPage() {
               })}
             </div>
 
-            <div className="flex-1" />
-            <div className="flex flex-col gap-2.5">
+            <div className="flex-1 lg:hidden" />
+            <div className="flex flex-col gap-2.5 lg:col-start-2 lg:row-start-2">
               <CtaButton onClick={goFinal} disabled={starting}>
                 {starting ? "本番を始めています…" : `${name}で本番を作る（高画質・${brief.sound ? "音付き" : "音なし"}${brief.duration_sec}秒）`}
               </CtaButton>
@@ -195,7 +196,7 @@ export default function DraftsPage() {
                 </button>
               </div>
             </div>
-          </>
+          </div>
         )}
       </Screen>
     </WaitForFlow>
