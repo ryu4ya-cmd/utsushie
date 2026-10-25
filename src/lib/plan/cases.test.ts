@@ -4,7 +4,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { chooseFinalModel, promptFor } from "@/lib/models";
+import { chooseFinalModel, cogvideo, promptFor } from "@/lib/models";
 import type { Brief, Duration, Plan } from "@/lib/types";
 import { check, kling } from "./build";
 import { analyze } from "./analyze";
@@ -44,6 +44,10 @@ describe("課題セット", () => {
             expect(japaneseOutsideQuotes(text)).toEqual([]);
             // セリフは一字一句そのまま、全部入る
             for (const line of analyze(c.sentence).lines) expect(plan.shots.flatMap((s) => s.dialogue.map((d) => d.line_ja))).toContain(line.text);
+            // 無料の CogVideoX-Flash 向けは512文字（下書きの差分の分を残す）に収まり、動きの文が入る
+            const free = cogvideo(plan);
+            expect(Array.from(free).length).toBeLessThanOrEqual(432);
+            expect(free).toMatch(/one continuous shot\. \S/);
             // 同じ入力なら同じ出力
             expect(mockPlan(brief)).toEqual(plan);
             if (c.from_image) {
