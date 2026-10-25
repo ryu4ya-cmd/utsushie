@@ -616,5 +616,314 @@
    "ok": true,
    "notes_ja": ""
   }
+ },
+ {
+  "title_ja": "写真の人がこちらを見て微笑む",
+  "aspect_ratio": "9:16",
+  "duration_sec": 10,
+  "style": "keep the look, colors and lighting of the input image",
+  "setting": "The place shown in the input image, with a gentle breeze.",
+  "characters": [
+   {
+    "id": "A",
+    "label_ja": "写真の人",
+    "sheet": "the person in the input image, exactly as shown: same face, hairstyle, clothing, colors and proportions",
+    "voice": null
+   }
+  ],
+  "shots": [
+   {
+    "start": 0,
+    "end": 5,
+    "framing": "same framing as the input image",
+    "camera": "static",
+    "characters": [
+     "A"
+    ],
+    "wardrobe": {},
+    "action": "Animate the input image as the first frame, keeping its subject, composition and lighting. A gentle breeze lifts A's hair, which flows softly to one side; A blinks naturally while looking slightly away.",
+    "dialogue": [],
+    "sfx": [
+     "soft rustle of hair"
+    ],
+    "ambience": [
+     "light breeze"
+    ]
+   },
+   {
+    "start": 5,
+    "end": 10,
+    "framing": "same framing, continuous take",
+    "camera": "very slow push-in",
+    "characters": [
+     "A"
+    ],
+    "wardrobe": {},
+    "action": "The same continuous take with no cut: A turns the eyes to look straight at the camera and a warm, small smile slowly spreads across the face. The background stays still except for leaves moving gently.",
+    "dialogue": [],
+    "sfx": [],
+    "ambience": [
+     "light breeze"
+    ]
+   }
+  ],
+  "music": null,
+  "on_screen_text": [],
+  "negative": [
+   "subtitles",
+   "captions",
+   "watermark",
+   "logo",
+   "distorted hands",
+   "extra limbs",
+   "changing the face or identity of the subject",
+   "new people appearing",
+   "sudden scene changes",
+   "morphing"
+  ],
+  "elements_ja": [
+   {
+    "element": "髪が風になびく",
+    "shot": 1
+   },
+   {
+    "element": "こちらを見る",
+    "shot": 2
+   },
+   {
+    "element": "微笑む",
+    "shot": 2
+   }
+  ],
+  "assumptions_ja": [
+   "写真を最初のコマにして、一続きの撮影（カットなし）にした",
+   "髪以外はほとんど動かさず、顔は変えない"
+  ],
+  "safety": {
+   "ok": true,
+   "notes_ja": ""
+  }
+ },
+ {
+  "title_ja": "新作スニーカーが回る",
+  "aspect_ratio": "9:16",
+  "duration_sec": 10,
+  "style": "clean commercial product photography look, soft studio lighting, crisp reflections",
+  "setting": "A clean seamless light gray studio backdrop with a round white display stand.",
+  "characters": [],
+  "shots": [
+   {
+    "start": 0,
+    "end": 5,
+    "framing": "close-up",
+    "camera": "slow orbit around the product",
+    "characters": [],
+    "wardrobe": {},
+    "action": "A single pair of clean white low-top sneakers stands on a round white display stand and turns slowly, a soft highlight gliding across the smooth leather.",
+    "dialogue": [],
+    "sfx": [
+     "soft whoosh as the stand turns"
+    ],
+    "ambience": [
+     "quiet studio room tone"
+    ]
+   },
+   {
+    "start": 5,
+    "end": 10,
+    "framing": "extreme close-up",
+    "camera": "slow push-in",
+    "characters": [],
+    "wardrobe": {},
+    "action": "The sneakers keep spinning, then stop facing the camera at a three-quarter angle; the camera glides in on the stitching and the textured rubber sole in crisp focus.",
+    "dialogue": [],
+    "sfx": [
+     "a soft click as the stand stops"
+    ],
+    "ambience": [
+     "quiet studio room tone"
+    ]
+   }
+  ],
+  "music": null,
+  "on_screen_text": [],
+  "negative": [
+   "subtitles",
+   "captions",
+   "watermark",
+   "logo",
+   "distorted hands",
+   "extra limbs",
+   "brand names",
+   "extra products",
+   "people",
+   "dirty or worn shoes"
+  ],
+  "elements_ja": [
+   {
+    "element": "新作のスニーカー",
+    "shot": 1
+   },
+   {
+    "element": "くるくる回る",
+    "shot": 1
+   }
+  ],
+  "assumptions_ja": [
+   "ブランドが分からないよう、ロゴのない白いスニーカーにした",
+   "背景は撮影スタジオ"
+  ],
+  "safety": {
+   "ok": true,
+   "notes_ja": "実在のブランドは出さない"
+  }
+ },
+ {
+  "title_ja": "焼きたてパンケーキにシロップ",
+  "aspect_ratio": "9:16",
+  "duration_sec": 10,
+  "style": "photorealistic, warm morning window light, appetizing food close-up, glistening details",
+  "setting": "A light wooden cafe table by a window on a bright morning.",
+  "characters": [],
+  "shots": [
+   {
+    "start": 0,
+    "end": 5,
+    "framing": "close-up",
+    "camera": "slow push-in",
+    "characters": [],
+    "wardrobe": {},
+    "action": "A freshly made stack of three thick, fluffy pancakes on a white plate, a cube of butter melting on top, faint steam rising.",
+    "dialogue": [],
+    "sfx": [
+     "a faint sizzle of melting butter"
+    ],
+    "ambience": [
+     "soft cafe chatter"
+    ]
+   },
+   {
+    "start": 5,
+    "end": 10,
+    "framing": "extreme close-up",
+    "camera": "static",
+    "characters": [],
+    "wardrobe": {},
+    "action": "Golden maple syrup pours from above in a slow, thick stream, spreading over the butter and dripping down the sides of the stack.",
+    "dialogue": [],
+    "sfx": [
+     "thick syrup pouring"
+    ],
+    "ambience": [
+     "soft cafe chatter"
+    ]
+   }
+  ],
+  "music": null,
+  "on_screen_text": [],
+  "negative": [
+   "subtitles",
+   "captions",
+   "watermark",
+   "logo",
+   "distorted hands",
+   "extra limbs",
+   "people",
+   "messy table",
+   "burnt edges"
+  ],
+  "elements_ja": [
+   {
+    "element": "焼きたてのパンケーキ",
+    "shot": 1
+   },
+   {
+    "element": "シロップがとろっとかかる",
+    "shot": 2
+   }
+  ],
+  "assumptions_ja": [
+   "場所はカフェの窓辺のテーブル",
+   "パンケーキは3段でバターをのせた"
+  ],
+  "safety": {
+   "ok": true,
+   "notes_ja": ""
+  }
+ },
+ {
+  "title_ja": "草原の流れ星",
+  "aspect_ratio": "9:16",
+  "duration_sec": 15,
+  "style": "photorealistic, night, deep blue starlight, long-exposure clarity",
+  "setting": "A wide grassy meadow on a clear, moonless night under a sky full of stars and the Milky Way.",
+  "characters": [],
+  "shots": [
+   {
+    "start": 0,
+    "end": 8,
+    "framing": "wide shot",
+    "camera": "slow upward tilt",
+    "characters": [],
+    "wardrobe": {},
+    "action": "Tall grass sways softly in the night breeze; the camera tilts up from the dark horizon to reveal countless twinkling stars and the glowing band of the Milky Way.",
+    "dialogue": [],
+    "sfx": [],
+    "ambience": [
+     "wind through the grass",
+     "crickets chirping"
+    ]
+   },
+   {
+    "start": 8,
+    "end": 15,
+    "framing": "wide shot",
+    "camera": "static",
+    "characters": [],
+    "wardrobe": {},
+    "action": "A bright shooting star streaks diagonally across the starry sky, leaving a brief glowing trail, then fades; the stars keep twinkling.",
+    "dialogue": [],
+    "sfx": [],
+    "ambience": [
+     "wind through the grass",
+     "crickets chirping"
+    ]
+   }
+  ],
+  "music": null,
+  "on_screen_text": [],
+  "negative": [
+   "subtitles",
+   "captions",
+   "watermark",
+   "logo",
+   "distorted hands",
+   "extra limbs",
+   "people",
+   "city lights",
+   "airplanes"
+  ],
+  "elements_ja": [
+   {
+    "element": "満天の星",
+    "shot": 1
+   },
+   {
+    "element": "草原",
+    "shot": 1
+   },
+   {
+    "element": "流れ星が流れる",
+    "shot": 2
+   }
+  ],
+  "assumptions_ja": [
+   "月のない晴れた夜",
+   "季節は虫の声がする夏の終わり"
+  ],
+  "safety": {
+   "ok": true,
+   "notes_ja": ""
+  }
  }
 ]

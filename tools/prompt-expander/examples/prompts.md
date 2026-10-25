@@ -280,3 +280,190 @@ Avoid: subtitles, captions, watermark, logo, distorted hands, garbled characters
 []
 ```
 
+## 7. 写真の人がこちらを見て微笑む
+
+検査: 問題なし
+
+### Kling 3.0
+
+```text
+9:16 vertical video, 10 seconds. Style: keep the look, colors and lighting of the input image. Setting: The place shown in the input image, with a gentle breeze. No background music.
+Shot 1 (0-5s): Same framing as the input image, static. A is the person in the input image, exactly as shown: same face, hairstyle, clothing, colors and proportions. Animate the input image as the first frame, keeping its subject, composition and lighting. A gentle breeze lifts A's hair, which flows softly to one side; A blinks naturally while looking slightly away. Sound effects: soft rustle of hair. Ambience: light breeze.
+Shot 2 (5-10s): Same framing, continuous take, very slow push-in. A is the person in the input image, exactly as shown: same face, hairstyle, clothing, colors and proportions. The same continuous take with no cut: A turns the eyes to look straight at the camera and a warm, small smile slowly spreads across the face. The background stays still except for leaves moving gently. Ambience: light breeze.
+Avoid: subtitles, captions, watermark, logo, distorted hands, extra limbs, changing the face or identity of the subject, new people appearing, sudden scene changes, morphing.
+```
+
+### Seedance 2
+
+```text
+9:16 vertical video, 10 seconds. Style: keep the look, colors and lighting of the input image. Setting: The place shown in the input image, with a gentle breeze. No background music.
+Characters (keep identical in every shot): A: the person in the input image, exactly as shown: same face, hairstyle, clothing, colors and proportions.
+[0-5s] Same framing as the input image, static. Animate the input image as the first frame, keeping its subject, composition and lighting. A gentle breeze lifts A's hair, which flows softly to one side; A blinks naturally while looking slightly away. Sound effects: soft rustle of hair. Ambience: light breeze.
+[5-10s] Same framing, continuous take, very slow push-in. The same continuous take with no cut: A turns the eyes to look straight at the camera and a warm, small smile slowly spreads across the face. The background stays still except for leaves moving gently. Ambience: light breeze.
+Avoid: subtitles, captions, watermark, logo, distorted hands, extra limbs, changing the face or identity of the subject, new people appearing, sudden scene changes, morphing.
+```
+
+### Veo 3.1 1本目（8秒）
+
+```text
+9:16 vertical video, 8 seconds. Style: keep the look, colors and lighting of the input image. Setting: The place shown in the input image, with a gentle breeze. No background music.
+0-5s: Same framing as the input image, static. A is the person in the input image, exactly as shown: same face, hairstyle, clothing, colors and proportions. Animate the input image as the first frame, keeping its subject, composition and lighting. A gentle breeze lifts A's hair, which flows softly to one side; A blinks naturally while looking slightly away. Sound effects: soft rustle of hair. Ambience: light breeze.
+5-8s: Same framing, continuous take, very slow push-in. A is the person in the input image, exactly as shown: same face, hairstyle, clothing, colors and proportions. The same continuous take with no cut: A turns the eyes to look straight at the camera and a warm, small smile slowly spreads across the face. The background stays still except for leaves moving gently. Ambience: light breeze.
+Avoid: subtitles, captions, watermark, logo, distorted hands, extra limbs, changing the face or identity of the subject, new people appearing, sudden scene changes, morphing.
+```
+
+### Veo 3.1 延長（続き2秒）
+
+```text
+9:16 vertical video, 2 seconds. Style: keep the look, colors and lighting of the input image. Setting: The place shown in the input image, with a gentle breeze. No background music.
+Continue seamlessly from the last frame of the previous clip.
+0-2s: Same framing, continuous take, very slow push-in. A is the person in the input image, exactly as shown: same face, hairstyle, clothing, colors and proportions. The same continuous take with no cut: A turns the eyes to look straight at the camera and a warm, small smile slowly spreads across the face. The background stays still except for leaves moving gently. Ambience: light breeze.
+Avoid: subtitles, captions, watermark, logo, distorted hands, extra limbs, changing the face or identity of the subject, new people appearing, sudden scene changes, morphing.
+```
+
+### 字幕
+
+```json
+[]
+```
+
+## 8. 新作スニーカーが回る
+
+検査: 問題なし
+
+### Kling 3.0
+
+```text
+9:16 vertical video, 10 seconds. Style: clean commercial product photography look, soft studio lighting, crisp reflections. Setting: A clean seamless light gray studio backdrop with a round white display stand. No background music.
+Shot 1 (0-5s): Close-up, slow orbit around the product. A single pair of clean white low-top sneakers stands on a round white display stand and turns slowly, a soft highlight gliding across the smooth leather. Sound effects: soft whoosh as the stand turns. Ambience: quiet studio room tone.
+Shot 2 (5-10s): Extreme close-up, slow push-in. The sneakers keep spinning, then stop facing the camera at a three-quarter angle; the camera glides in on the stitching and the textured rubber sole in crisp focus. Sound effects: a soft click as the stand stops. Ambience: quiet studio room tone.
+Avoid: subtitles, captions, watermark, logo, distorted hands, extra limbs, brand names, extra products, people, dirty or worn shoes.
+```
+
+### Seedance 2
+
+```text
+9:16 vertical video, 10 seconds. Style: clean commercial product photography look, soft studio lighting, crisp reflections. Setting: A clean seamless light gray studio backdrop with a round white display stand. No background music.
+Characters (keep identical in every shot): 
+[0-5s] Close-up, slow orbit around the product. A single pair of clean white low-top sneakers stands on a round white display stand and turns slowly, a soft highlight gliding across the smooth leather. Sound effects: soft whoosh as the stand turns. Ambience: quiet studio room tone.
+[5-10s] Extreme close-up, slow push-in. The sneakers keep spinning, then stop facing the camera at a three-quarter angle; the camera glides in on the stitching and the textured rubber sole in crisp focus. Sound effects: a soft click as the stand stops. Ambience: quiet studio room tone.
+Avoid: subtitles, captions, watermark, logo, distorted hands, extra limbs, brand names, extra products, people, dirty or worn shoes.
+```
+
+### Veo 3.1 1本目（8秒）
+
+```text
+9:16 vertical video, 8 seconds. Style: clean commercial product photography look, soft studio lighting, crisp reflections. Setting: A clean seamless light gray studio backdrop with a round white display stand. No background music.
+0-5s: Close-up, slow orbit around the product. A single pair of clean white low-top sneakers stands on a round white display stand and turns slowly, a soft highlight gliding across the smooth leather. Sound effects: soft whoosh as the stand turns. Ambience: quiet studio room tone.
+5-8s: Extreme close-up, slow push-in. The sneakers keep spinning, then stop facing the camera at a three-quarter angle; the camera glides in on the stitching and the textured rubber sole in crisp focus. Sound effects: a soft click as the stand stops. Ambience: quiet studio room tone.
+Avoid: subtitles, captions, watermark, logo, distorted hands, extra limbs, brand names, extra products, people, dirty or worn shoes.
+```
+
+### Veo 3.1 延長（続き2秒）
+
+```text
+9:16 vertical video, 2 seconds. Style: clean commercial product photography look, soft studio lighting, crisp reflections. Setting: A clean seamless light gray studio backdrop with a round white display stand. No background music.
+Continue seamlessly from the last frame of the previous clip.
+0-2s: Extreme close-up, slow push-in. The sneakers keep spinning, then stop facing the camera at a three-quarter angle; the camera glides in on the stitching and the textured rubber sole in crisp focus. Sound effects: a soft click as the stand stops. Ambience: quiet studio room tone.
+Avoid: subtitles, captions, watermark, logo, distorted hands, extra limbs, brand names, extra products, people, dirty or worn shoes.
+```
+
+### 字幕
+
+```json
+[]
+```
+
+## 9. 焼きたてパンケーキにシロップ
+
+検査: 問題なし
+
+### Kling 3.0
+
+```text
+9:16 vertical video, 10 seconds. Style: photorealistic, warm morning window light, appetizing food close-up, glistening details. Setting: A light wooden cafe table by a window on a bright morning. No background music.
+Shot 1 (0-5s): Close-up, slow push-in. A freshly made stack of three thick, fluffy pancakes on a white plate, a cube of butter melting on top, faint steam rising. Sound effects: a faint sizzle of melting butter. Ambience: soft cafe chatter.
+Shot 2 (5-10s): Extreme close-up, static. Golden maple syrup pours from above in a slow, thick stream, spreading over the butter and dripping down the sides of the stack. Sound effects: thick syrup pouring. Ambience: soft cafe chatter.
+Avoid: subtitles, captions, watermark, logo, distorted hands, extra limbs, people, messy table, burnt edges.
+```
+
+### Seedance 2
+
+```text
+9:16 vertical video, 10 seconds. Style: photorealistic, warm morning window light, appetizing food close-up, glistening details. Setting: A light wooden cafe table by a window on a bright morning. No background music.
+Characters (keep identical in every shot): 
+[0-5s] Close-up, slow push-in. A freshly made stack of three thick, fluffy pancakes on a white plate, a cube of butter melting on top, faint steam rising. Sound effects: a faint sizzle of melting butter. Ambience: soft cafe chatter.
+[5-10s] Extreme close-up, static. Golden maple syrup pours from above in a slow, thick stream, spreading over the butter and dripping down the sides of the stack. Sound effects: thick syrup pouring. Ambience: soft cafe chatter.
+Avoid: subtitles, captions, watermark, logo, distorted hands, extra limbs, people, messy table, burnt edges.
+```
+
+### Veo 3.1 1本目（8秒）
+
+```text
+9:16 vertical video, 8 seconds. Style: photorealistic, warm morning window light, appetizing food close-up, glistening details. Setting: A light wooden cafe table by a window on a bright morning. No background music.
+0-5s: Close-up, slow push-in. A freshly made stack of three thick, fluffy pancakes on a white plate, a cube of butter melting on top, faint steam rising. Sound effects: a faint sizzle of melting butter. Ambience: soft cafe chatter.
+5-8s: Extreme close-up, static. Golden maple syrup pours from above in a slow, thick stream, spreading over the butter and dripping down the sides of the stack. Sound effects: thick syrup pouring. Ambience: soft cafe chatter.
+Avoid: subtitles, captions, watermark, logo, distorted hands, extra limbs, people, messy table, burnt edges.
+```
+
+### Veo 3.1 延長（続き2秒）
+
+```text
+9:16 vertical video, 2 seconds. Style: photorealistic, warm morning window light, appetizing food close-up, glistening details. Setting: A light wooden cafe table by a window on a bright morning. No background music.
+Continue seamlessly from the last frame of the previous clip.
+0-2s: Extreme close-up, static. Golden maple syrup pours from above in a slow, thick stream, spreading over the butter and dripping down the sides of the stack. Sound effects: thick syrup pouring. Ambience: soft cafe chatter.
+Avoid: subtitles, captions, watermark, logo, distorted hands, extra limbs, people, messy table, burnt edges.
+```
+
+### 字幕
+
+```json
+[]
+```
+
+## 10. 草原の流れ星
+
+検査: 問題なし
+
+### Kling 3.0
+
+```text
+9:16 vertical video, 15 seconds. Style: photorealistic, night, deep blue starlight, long-exposure clarity. Setting: A wide grassy meadow on a clear, moonless night under a sky full of stars and the Milky Way. No background music.
+Shot 1 (0-8s): Wide shot, slow upward tilt. Tall grass sways softly in the night breeze; the camera tilts up from the dark horizon to reveal countless twinkling stars and the glowing band of the Milky Way. Ambience: wind through the grass, crickets chirping.
+Shot 2 (8-15s): Wide shot, static. A bright shooting star streaks diagonally across the starry sky, leaving a brief glowing trail, then fades; the stars keep twinkling. Ambience: wind through the grass, crickets chirping.
+Avoid: subtitles, captions, watermark, logo, distorted hands, extra limbs, people, city lights, airplanes.
+```
+
+### Seedance 2
+
+```text
+9:16 vertical video, 15 seconds. Style: photorealistic, night, deep blue starlight, long-exposure clarity. Setting: A wide grassy meadow on a clear, moonless night under a sky full of stars and the Milky Way. No background music.
+Characters (keep identical in every shot): 
+[0-8s] Wide shot, slow upward tilt. Tall grass sways softly in the night breeze; the camera tilts up from the dark horizon to reveal countless twinkling stars and the glowing band of the Milky Way. Ambience: wind through the grass, crickets chirping.
+[8-15s] Wide shot, static. A bright shooting star streaks diagonally across the starry sky, leaving a brief glowing trail, then fades; the stars keep twinkling. Ambience: wind through the grass, crickets chirping.
+Avoid: subtitles, captions, watermark, logo, distorted hands, extra limbs, people, city lights, airplanes.
+```
+
+### Veo 3.1 1本目（8秒）
+
+```text
+9:16 vertical video, 8 seconds. Style: photorealistic, night, deep blue starlight, long-exposure clarity. Setting: A wide grassy meadow on a clear, moonless night under a sky full of stars and the Milky Way. No background music.
+0-8s: Wide shot, slow upward tilt. Tall grass sways softly in the night breeze; the camera tilts up from the dark horizon to reveal countless twinkling stars and the glowing band of the Milky Way. Ambience: wind through the grass, crickets chirping.
+Avoid: subtitles, captions, watermark, logo, distorted hands, extra limbs, people, city lights, airplanes.
+```
+
+### Veo 3.1 延長（続き7秒）
+
+```text
+9:16 vertical video, 7 seconds. Style: photorealistic, night, deep blue starlight, long-exposure clarity. Setting: A wide grassy meadow on a clear, moonless night under a sky full of stars and the Milky Way. No background music.
+Continue seamlessly from the last frame of the previous clip.
+0-7s: Wide shot, static. A bright shooting star streaks diagonally across the starry sky, leaving a brief glowing trail, then fades; the stars keep twinkling. Ambience: wind through the grass, crickets chirping.
+Avoid: subtitles, captions, watermark, logo, distorted hands, extra limbs, people, city lights, airplanes.
+```
+
+### 字幕
+
+```json
+[]
+```
+

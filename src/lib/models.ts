@@ -25,15 +25,36 @@ export function chooseFinalModel(plan: Plan, fromImage = false, env: Record<stri
 }
 
 /**
- * CogVideoX-Flash 向けの指示文。数秒の1本しか作れないので、最初のカットだけにし、長さの指定は外す。
- * 構図の違い（下書き）を足せるよう、上限より少し短く詰める
+ * CogVideoX-Flash 向けの指示文。数秒の1本しか作れず、指示文も512文字までなので、
+ * 全カットの動きを1本の流れにまとめ、大事な順（動き → 場所 → 見た目 → 雰囲気 → 音 → 避けるもの）に並べて、入る行だけを送る。
+ * 声は出ないのでセリフは書かない。構図の違い（下書き）を足せるよう、上限より少し短く詰める
  */
 export function cogvideo(plan: Plan): string {
-  const lines = kling(plan)
-    .split("\n")
-    .filter((l) => !/^Shot [2-9]/.test(l))
-    .map((l) => l.replace(/, \d+ seconds\./, ".").replace(/^Shot 1 \([^)]*\): /, ""));
+  const vertical = plan.aspect_ratio === "9:16" ? "Vertical 9:16 video" : "16:9 video";
+  const actions = plan.shots
+    .map((s) => s.action.replace(/^The same continuous take goes on with no cut\. /, "").replace(/ Also follow this detail[^「]*「[^」]*」\./, ""))
+    .join(" Then ");
+  const sounds = Array.from(new Set(plan.shots.flatMap((s) => [...s.sfx, ...s.ambience])));
+  const lines = [
+    fitSentences(`${vertical}, one continuous shot. ${actions}`, 300),
+    `Setting: ${plan.setting}`,
+    ...plan.characters.map((c) => `${c.id} is ${c.sheet}.`),
+    `Style: ${plan.style}.`,
+    ...(sounds.length ? [`Sound: ${sounds.join(", ")}.`] : []),
+    `Avoid: ${plan.negative.join(", ")}.`,
+  ];
   return clipPrompt(lines.join("\n"), COGVIDEO_MAX_PROMPT - 80);
+}
+
+/** 文の切れ目で max 文字までに詰める */
+function fitSentences(text: string, max: number): string {
+  if (Array.from(text).length <= max) return text;
+  let out = "";
+  for (const part of text.match(/[^.]+\.(?:\s|$)/g) ?? [text]) {
+    if (Array.from(out + part).length > max) break;
+    out += part;
+  }
+  return (out || Array.from(text).slice(0, max).join("")).trim();
 }
 
 /** 選んだモデルに送る指示文。Veo は8秒ごとに分かれるので、つないで見せる */
