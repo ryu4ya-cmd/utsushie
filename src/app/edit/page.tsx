@@ -20,11 +20,15 @@ import {
   TEXT_SIZES,
   type TextItem,
 } from "@/lib/edit/spec";
+import { getEdit, putEdit, restoreSpec, type SavedEdit } from "@/lib/edit/saved";
 import { type HistoryEntry, loadHistory } from "@/lib/history";
 import { shareBlob } from "@/lib/share";
 
 type Tab = "trim" | "text" | "bgm";
-type Phase = { kind: "edit" } | { kind: "export"; ratio: number } | { kind: "done"; url: string; blob: Blob };
+type Phase =
+  | { kind: "edit" }
+  | { kind: "export"; ratio: number }
+  | { kind: "done"; url: string; blob: Blob; kept: boolean };
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "trim", label: "トリミング" },
@@ -34,15 +38,21 @@ const TABS: { id: Tab; label: string }[] = [
 
 export default function EditPage() {
   const [entry, setEntry] = useState<HistoryEntry | null | undefined>(undefined);
+  const [saved, setSaved] = useState<SavedEdit | null>(null);
   const [back, setBack] = useState("/history");
 
   useEffect(() => {
     // 端末に保存した履歴は、画面を出したあとでしか読めない
     const q = new URLSearchParams(location.search);
-    const id = q.get("id");
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setEntry(loadHistory().find((e) => e.id === id) ?? null);
-    if (q.get("from") === "done") setBack("/done");
+    const editId = q.get("edit");
+    void (async () => {
+      if (q.get("from") === "done") setBack("/done");
+      // 履歴に残した編集を開き直すときは、その設定と元の動画を読む
+      const prev = editId ? await getEdit(editId) : null;
+      const id = prev?.sourceId ?? q.get("id");
+      setSaved(prev);
+      setEntry(loadHistory().find((e) => e.id === id) ?? null);
+    })();
   }, []);
 
   if (entry === undefined)
@@ -60,10 +70,10 @@ export default function EditPage() {
         <ErrorBox message="編集する動画が見つかりませんでした。履歴から選び直してください。" />
       </Screen>
     );
-  return <Editor entry={entry} back={back} />;
+  return <Editor entry={entry} saved={saved} back={back} />;
 }
 
-function Editor({ entry, back }: { entry: HistoryEntry; back: string }) {
+function Editor({ entry, saved, back }: { entry: HistoryEntry; saved: SavedEdit | null; back: string }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fontRef = useRef<HTMLSpanElement>(null);
@@ -80,6 +90,10 @@ function Editor({ entry, back }: { entry: HistoryEntry; back: string }) {
   const [bgmBusy, setBgmBusy] = useState(false);
   const [bgmFileName, setBgmFileName] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+  // 端末の音楽を BGM にしたときの元のファイル。編集を履歴に残すときに一緒に残す
+  const bgmBlobRef = useRef<Blob | null>(saved?.bgmFile ?? null);
+  // この編集を履歴に残すときの ID。書き出し直したら同じところに上書きする
+  const keptRef = useRef<{ id: string; createdAt: number } | null>(saved ? { id: saved.id, createdAt: saved.createdAt } : null);
   const { toast, flash } = useToast();
   const cues = entry.subtitles;
   const recorderType = useMemo(() => (typeof window === "undefined" ? null : EditorEngine.recorderType()), []);
@@ -116,11 +130,11 @@ function Editor({ entry, back }: { entry: HistoryEntry; back: string }) {
     c.height = size.height;
     const d = Math.round(v.duration * 10) / 10;
     setDuration(d);
-    const first = defaultSpec(d);
+    const first = saved ? restoreSpec(saved.spec, d) : defaultSpec(d);
     specRef.current = first;
     setSpec(first);
     engineRef.current?.dispose();
-    engineRef.current = new EditorEngine({
+    const engine = new EditorEngine({
       video: v,
       canvas: c,
       spec: () => specRef.current!,
@@ -131,6 +145,29 @@ function Editor({ entry, back }: { entry: HistoryEntry; back: string }) {
         setNow(s.time);
       },
     });
+    engineRef.current = engine;
+    if (first.bgm.kind !== "none") void restoreBgm(engine, first.bgm, d);
+  };
+
+  // 開き直した編集の BGM を、もう一度鳴らせるように用意する。用意できなければ「なし」に戻す
+  const restoreBgm = async (engine: EditorEngine, bgm: EditSpec["bgm"], d: number) => {
+    setBgmBusy(true);
+    try {
+      if (bgm.kind === "preset") {
+        const p = findPreset(bgm.id);
+        if (!p) throw new Error("preset");
+        engine.setBgm(await renderBgm(p, d));
+      } else if (bgm.kind === "file") {
+        if (!bgmBlobRef.current) throw new Error("file");
+        engine.setBgm(await engine.decode(await bgmBlobRef.current.arrayBuffer()));
+        setBgmFileName(bgm.name);
+      }
+    } catch {
+      update({ bgm: { kind: "none" } });
+      flash("前のBGMを読み込めなかったので「なし」にしました");
+    } finally {
+      setBgmBusy(false);
+    }
   };
   useEffect(() => () => engineRef.current?.dispose(), []);
 
@@ -192,6 +229,7 @@ function Editor({ entry, back }: { entry: HistoryEntry; back: string }) {
     setBgmBusy(true);
     try {
       e.setBgm(await e.decode(await file.arrayBuffer()));
+      bgmBlobRef.current = file;
       setBgmFileName(file.name);
       update({ bgm: { kind: "file", name: file.name } });
     } catch {
@@ -208,10 +246,33 @@ function Editor({ entry, back }: { entry: HistoryEntry; back: string }) {
     setPhase({ kind: "export", ratio: 0 });
     try {
       const blob = await e.export(recorderType, (ratio) => setPhase({ kind: "export", ratio }));
-      setPhase({ kind: "done", url: URL.createObjectURL(blob), blob });
+      const kept = await keep(blob);
+      setPhase({ kind: "done", url: URL.createObjectURL(blob), blob, kept });
     } catch {
       setPhase({ kind: "edit" });
       flash("書き出せませんでした。もう一度お試しください");
+    }
+  };
+
+  // 書き出した動画と設定を、この端末の履歴に残す（サーバーには送らない）
+  const keep = async (blob: Blob): Promise<boolean> => {
+    const s = specRef.current;
+    if (!s) return false;
+    const now = Date.now();
+    keptRef.current ??= { id: `e${now}`, createdAt: now };
+    try {
+      await putEdit({
+        ...keptRef.current,
+        sourceId: entry.id,
+        updatedAt: now,
+        spec: s,
+        video: blob,
+        length: Math.round((s.end - s.start) * 10) / 10,
+        bgmFile: s.bgm.kind === "file" ? bgmBlobRef.current : null,
+      });
+      return true;
+    } catch {
+      return false;
     }
   };
 
@@ -431,7 +492,11 @@ function Editor({ entry, back }: { entry: HistoryEntry; back: string }) {
             {ext === "webm" && (
               <p className="text-xs leading-relaxed text-muted">このブラウザは MP4 を作れないので WebM で保存します。多くの SNS はそのまま投稿できます。</p>
             )}
-            <p className="text-xs leading-relaxed text-muted">編集した動画は履歴には残りません。忘れずに保存してください。</p>
+            <p className="text-xs leading-relaxed text-muted" role="status">
+              {phase.kept
+                ? "この端末の「作った動画」に残しました。元の動画の「編集した動画」から、あとで見直したり編集し直したりできます。"
+                : "端末の空き容量が足りないなどで、履歴に残せませんでした。忘れずに保存してください。"}
+            </p>
             <button
               type="button"
               onClick={() => setPhase({ kind: "edit" })}
