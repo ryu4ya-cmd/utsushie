@@ -32,7 +32,11 @@ export const LINK_TARGETS: { id: LinkTarget; label: string }[] = [
 /** 動画ファイルを端末の共有画面で送る（TikTok・Instagram・YouTube へはこれで渡す） */
 export async function shareVideoFile(videoUrl: string, title: string): Promise<"shared" | "cancelled" | "unsupported"> {
   const blob = await (await fetch(videoUrl)).blob();
-  const file = new File([blob], "utsushie.mp4", { type: "video/mp4" });
+  return shareBlob(new File([blob], "utsushie.mp4", { type: "video/mp4" }), title);
+}
+
+/** 端末の中で作ったファイル（編集した動画など）をそのまま送る */
+export async function shareBlob(file: File, title: string): Promise<"shared" | "cancelled" | "unsupported"> {
   if (!navigator.canShare?.({ files: [file] })) return "unsupported";
   try {
     await navigator.share({ files: [file], title });

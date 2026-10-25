@@ -2,6 +2,7 @@
 
 // 作った動画の履歴（この端末に保存したもの）
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { SharePanel } from "@/components/SharePanel";
 import { BackHeader, CtaLink, Screen, Toast, useToast } from "@/components/ui";
@@ -92,6 +93,12 @@ export default function HistoryPage() {
                     playsInline
                     preload="metadata"
                   />
+                  <Link
+                    href={`/edit?id=${encodeURIComponent(e.id)}`}
+                    className="flex h-11 items-center justify-center rounded-xl border-[1.5px] border-accent text-sm font-bold text-accent hover:bg-accent hover:text-on-accent"
+                  >
+                    編集する（文字・BGM・トリミング）
+                  </Link>
                   <SharePanel id={e.id} title={e.title} videoUrl={e.videoUrl} flash={flash} />
                 </>
               )}

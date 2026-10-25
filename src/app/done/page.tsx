@@ -119,6 +119,18 @@ export default function DonePage() {
               MP4で保存
             </a>
 
+            {finalId && videoUrl && (
+              <Link
+                href={`/edit?id=${encodeURIComponent(finalId)}&from=done`}
+                className="flex h-12 items-center justify-center gap-2 rounded-2xl border-[1.5px] border-accent text-[15px] font-bold text-accent hover:bg-accent hover:text-on-accent"
+              >
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M3 15l1-4 8-8 3 3-8 8-4 1zM10.5 4.5l3 3" />
+                </svg>
+                編集する（文字・BGM・トリミング）
+              </Link>
+            )}
+
             {finalId && <SharePanel id={finalId} title={title} videoUrl={videoUrl} flash={flash} />}
 
             <div className="flex-1 lg:hidden" />
