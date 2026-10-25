@@ -12,6 +12,7 @@
 | ③ | AI が直した指示文を見て、下書き2本から選ぶ | `src/app/drafts/page.tsx` |
 | ④ | 本番を生成中 | `src/app/generating/page.tsx` |
 | ⑤ | 字幕の切り替え・MP4 保存・共有 | `src/app/done/page.tsx` |
+| — | 編集（トリミング・文字入れ・BGM・字幕の焼き込み）。端末の中で処理して MP4 に書き出す（`src/lib/edit/`） | `src/app/edit/page.tsx` |
 | — | 作った動画の履歴 | `src/app/history/page.tsx` |
 | — | 共有ページ（リンクを開いた人が見る） | `src/app/v/[id]/page.tsx` |
 
@@ -127,4 +128,5 @@ bash scripts/make-samples.sh   # ffmpeg が必要
 - 履歴を端末をまたいで見られるようにすること（ログインは済み。Supabase に表を足す）
 - クレジットと決済
 - 入力・出力のモデレーション
-- 字幕の焼き込み（FFmpeg）
+- 生成時の字幕の焼き込み（FFmpeg）。いまは編集画面でユーザーが焼き込める
+- 編集した動画を履歴に残すこと（いまは書き出したら端末に保存してもらう）
