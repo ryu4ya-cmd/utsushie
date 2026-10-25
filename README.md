@@ -30,6 +30,7 @@ npm run dev
 
 ```bash
 npm test        # 指示文づくりのテスト
+npm run examples  # 課題セットの変換結果（rule-based.md）を作り直す
 npm run lint    # 書き方のチェック
 npm run build   # 公開用にまとめる
 ```
@@ -37,7 +38,11 @@ npm run build   # 公開用にまとめる
 ## しくみ
 
 - **一文 → 設計図 → 指示文**：`POST /api/plan`。設計図の形と LLM への指示書は `tools/prompt-expander/system-prompt.md`。
-  練習モードでは LLM を呼ばず、`src/lib/plan/mockPlanner.ts` が決まった形の設計図を作ります。
+  練習モードでは LLM を呼ばず、`src/lib/plan/mockPlanner.ts` が一文を辞書（`src/lib/plan/lexicon.ts`）で読み解いて設計図を作ります。
+  場所・時間・天気・季節・人物や動物（固定の見た目）・動き・効果音・環境音・看板の文字を英語の指示にし、動きの順にカットを分けます。
+  辞書にない言葉は日本語のまま指示文に残すので、一文の要素は落ちません（画面の「AIが決めたこと」にも出ます）。
+  用途ごとの課題セット43本（`src/lib/plan/cases.ts`、写真から作る例を含む）で、抜け・セリフ・カットの長さ・同じ入力で同じ出力になるかをテストし、
+  結果を `tools/prompt-expander/examples/rule-based.md` に書き出しています。辞書や変換を変えたら `npm run examples` で作り直します。
   設計図から各モデル向けの文章と字幕を作るのは `src/lib/plan/build.ts`（Python の試作 `build_prompts.py` を移したもの。テストで同じ出力になることを確かめています）。
 - **モデルの選び方**：写真から作るときと、セリフ（「」）があるときは Kling 3.0、それ以外は Veo 3.1（`src/lib/models.ts`）。
 - **写真から作る**：②の画面で写真を選ぶ（スマホではカメラロールかカメラ）。選んだらすぐ長い辺1600pxの JPEG に縮め、動画の縦横比（9:16 / 16:9）の枠でドラッグして切り取る位置を決める（`src/components/PhotoPicker.tsx`・`src/lib/photo.ts`）。
@@ -67,7 +72,7 @@ npm run build   # 公開用にまとめる
 - つなぎ役は `src/lib/video/live.ts`。練習モードと同じくサーバーに状態を持たず、動画 API のタスクIDを **署名付きのジョブID** に入れます（作り替えたIDで勝手に生成を始められないように）。
 - できた動画は `GET /api/jobs/:id/video` からサーバー経由で返します（Veo の動画は API キーがないと読めないため）。
 - 必要な環境変数は `.env.example` を見てください。足りないときは API を呼ばずにエラーになります。
-- 指示文の書き直し（LLM）はまだなので、本番モードでも設計図は練習モードと同じ決まった形で作ります。
+- 指示文の書き直し（LLM）はまだなので、本番モードでも設計図は練習モードと同じ辞書での変換で作ります。
 
 **本番に切り替える前にやること**
 
